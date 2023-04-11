@@ -1,0 +1,184 @@
+import constants
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from constants import load_constants
+from torch.cuda.amp import autocast
+from transformers import AutoModel
+
+
+class REModel(nn.Module):
+    def __init__(self, model_name_or_path, num_class, dropout_prob):
+        super().__init__()
+        # self.args = args
+        self.encoder = AutoModel.from_pretrained(model_name_or_path)
+        self.encoder.gradient_checkpointing_enable()  # 启用梯度检查点
+        hidden_size = self.encoder.config.hidden_size
+        self.emb_grad = {}
+        # entity_type_rela2id = load_constants(args.data_dir)[2]
+        # self.entity_type_rela2id = {}
+        # for k, v in entity_type_rela2id.items():
+        #     self.entity_type_rela2id[int(k)] = v
+        # if self.args.input_format != 'typed_entity_marker_punct_suffix':
+        #     self.classifier = nn.Sequential(
+        #         nn.Linear(2 * hidden_size, hidden_size),
+        #         nn.ReLU(),
+        # nn.GELU(),
+        # nn.Dropout(p=args.dropout_prob),
+        # nn.Linear(hidden_size, args.num_class)
+        # )
+        self.classifier = nn.Sequential(
+            nn.Linear(2 * hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
+            nn.Linear(hidden_size, num_class)
+        )
+
+    # def set_encoder_grad(self, requires=False):
+    #     for param in self.encoder.parameters():
+    #         param.requires_grad = requires
+
+    def save(self, save_path):
+        # self.hook.remove()
+        torch.save(self, save_path)
+        # 重新生成hook
+        # def backward_hook(module, gin, gout):
+            # print('backward function is called.')
+            # self.emb_grad['grad'] = gout[0].clone().detach() # [batch_size, length, word_dim
+        # self.hook = self.encoder.embeddings.word_embeddings.register_full_backward_hook(backward_hook)
+
+
+    # @autocast()  # 自动混合精度训练，提高效率；取消自动混合精度训练
+    def forward(self, input_ids=None, attention_mask=None, ss=None, os=None):
+        outputs = self.encoder(
+            input_ids,
+            attention_mask=attention_mask,
+        )
+        pooled_output = outputs[0]
+        idx = torch.arange(input_ids.size(0)).to(input_ids.device)
+        ss_emb = pooled_output[idx, ss]
+        os_emb = pooled_output[idx, os]
+        h = torch.cat((ss_emb, os_emb), dim=-1)
+        # if self.args.input_format != 'typed_entity_marker_punct_suffix':
+        #     clsemb = pooled_output[:, 0]  # 取出cls向量
+        #     ss_emb = pooled_output[idx, ss]
+        #     os_emb = pooled_output[idx, os]
+        #     h = torch.cat((ss_emb, os_emb), dim=-1)
+        # else:
+        #     h = pooled_output[idx, mask_idx]
+        logits = self.classifier(h)
+        logits = logits.float()  # 切换为fp32类型
+        return logits
+        # mask unknow relas
+        # if self.args.mask_rela:
+        #     logits = self.mask_logits(logits, subj_type, obj_type)
+        # if labels is not None:  # train
+            # loss = (loss1 + loss2 * (1 - self.subs_rate)) / (1 + 1 - self.subs_rate)  # 替换比率越高，第二项权重越低
+            # loss = self.loss_fnt(logits, labels)
+            # 加上kl散度损失
+            # probs = F.softmax(logits)
+            # prob1, prob2 = probs.chunk(2)
+            # prob1, prob2 = F.softmax(logits1), F.softmax(logits2)
+            # kl_div = (F.kl_div(prob1, prob2) + F.kl_div(prob2, prob1)) * 0.5
+            # loss += self.kl_weight * kl_div  # kl散度, 默认为0.7，0相当于没有kl散度
+            # outputs = (loss,) + outputs
+            # return outputs
+        # else:  # test, mask掉不可能的logits，这个需要决定一下在什么时候使用这个（训练+测试，或者还是只在测试时使用，只在训练时使用不太实际）
+        #    logits = self.mask_logits(logits, subj_type, obj_type)
+            # return (logits,)
+
+    @autocast()
+    def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, use_baseline=False, ablation=False):
+        # 基础模型，直接返回
+        sz = input_ids.size(0) // 2
+        if use_baseline: # 基础模型
+            logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+            loss = F.cross_entropy(logits, labels[:sz]) 
+            return loss
+
+        if ablation:
+            logits = self(input_ids, attention_mask, ss, os)
+            loss = F.cross_entropy(logits, labels)
+            return loss
+
+
+        # 我们的模型，先反向传播一次，再根据梯度得到第二波结果
+        def backward_hook(module, gin, gout):
+            # print('backward function is called.')
+            self.emb_grad['grad'] = gout[0].clone().detach() # [batch_size, length, word_dim
+        
+        hook = self.encoder.embeddings.word_embeddings.register_full_backward_hook(backward_hook)
+        # 前半部分是原始数据，后半部分是增强后的数据
+        logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+        # logits1, logits2 = logits.chunk(2) # 使用kl散度做约束
+        # labels1, labels2 = labels.chunk(2) # 使用kl散度约束生成的关系向量
+        # 计算真实数据的损失反向传播得到输入的重要性
+        loss = F.cross_entropy(logits, labels[:sz]) 
+
+        # loss1 = self.loss_fnt(logits1, labels1)
+        # 添加hook
+
+        # 损失反向传播
+        loss.backward()
+        hook.remove()
+        # 计算每个句子对应的token的重要性
+        scores = self.emb_grad['grad'].norm(dim=2) # [batch_size, length]
+        # print(scores)
+        self.emb_grad = {} # 删除grad
+        scores = scores / scores.sum(dim=1, keepdims=True) # 所有数值都是正数，归一化到【0，1】
+
+        sent_lens = attention_mask.sum(dim=1)
+        subj_lens = se - ss + 1
+        obj_lens = oe - os + 1
+        ent_lens = subj_lens + obj_lens
+        baseline = ent_lens / sent_lens
+        sent_scores = []
+        for i in range(logits.size(0)):
+            ent_ss, ent_se = ss[i], se[i]
+            ent_os, ent_oe = os[i], oe[i]
+            subj_score = scores[i][ent_ss:ent_se+1].sum()
+            obj_score = scores[i][ent_os:ent_oe+1].sum()
+            sent_score = subj_score + obj_score
+            sent_scores.append(sent_score)
+        sent_scores = torch.tensor(sent_scores).to(baseline.device)
+        # print(sent_scores.shape)
+        # print(baseline.shape)
+        sent_scores = sent_scores - baseline[:sent_scores.numel()]
+        sent_scores = torch.clip(sent_scores, min=0).clone().detach()
+
+        # 计算出了分数
+        # 清空梯度
+        self.zero_grad()
+        logits = self(input_ids, attention_mask, ss, os)
+        logits1, logits2 = logits.chunk(2)
+        labels1, labels2 = labels.chunk(2)
+
+        loss1 = F.cross_entropy(logits1, labels1)
+        loss2 = F.cross_entropy(logits2, labels2, reduction='none')
+        # print(sent_scores)
+        # 因为计算梯度可能全部都是0，导致最后sent_score是nan，训练过程中会有问题，所以讲nan替换一下，避免出现问题
+        sent_scores = torch.where(torch.isnan(sent_scores), torch.zeros_like(sent_scores), sent_scores)
+        loss2 = torch.dot(loss2, sent_scores) / sz
+        # 第二次backward
+        # loss2.backward()
+        # hook.remove() # 结束后记得删除hook
+        # print(sent_scores)
+        # print(f"real data loss: {loss1.item()}, aug data loss: {loss2.item()}.")
+        # print(loss1, loss2)
+
+        # 得到损失返回
+        return loss1 + loss2
+
+
+    # def mask_logits(self, logits, subj_type, obj_type):
+    #     mask = torch.full_like(logits, 1e12)
+    #     batch_size = logits.size(0)
+    #     subj_type = subj_type.cpu().tolist()
+    #     obj_type = obj_type.cpu().tolist()
+    #     for i in range(batch_size):
+    #         key = subj_type[i] * 100 + obj_type[i]
+    #         rela_ids = self.entity_type_rela2id[str(key)]
+    #         mask[i, rela_ids] = 0.
+    #     logits = logits - mask
+
+    #     return logits

@@ -1,0 +1,10 @@
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_new_entity --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_one_new_entity --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_new_subj_entity --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_new_obj_entity --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_new_pair --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair_new_rela --eval_only
+python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair_old_rela --eval_only
