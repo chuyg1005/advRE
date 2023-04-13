@@ -1,10 +1,7 @@
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_new_entity --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_one_new_entity --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_new_subj_entity --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_new_obj_entity --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_new_pair --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair_new_rela --eval_only
-python run.py --data_dir ./data --train_tasks tacred --eval_tasks tacred --do_eval --output_dir output/tacred-aug/roberta-base --eval_name test_two_old_entity_old_pair_old_rela --eval_only
+export CUDA_VISIBLE_DEVICES=0
+type=baseline
+dataset=tacred
+# split=test
+for split in 'test' 'test_two_new_entity' 'test_one_new_entity' 'test_new_subj_entity' 'test_new_obj_entity' 'test_two_old_entity' 'test_two_old_entity_new_pair' 'test_two_old_entity_old_pair' 'test_two_old_entity_old_pair_new_rela' 'test_two_old_entity_old_pair_old_rela'; do
+    python run.py --data_dir ../../data/re-datasets/${dataset} --train_tasks ${dataset} --eval_tasks ${dataset} --do_eval --eval_dir ./output/${dataset}-${type}/roberta-base/checkpoint-90 --eval_name ${split} --eval_only
+done

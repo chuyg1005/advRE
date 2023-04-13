@@ -48,7 +48,7 @@ python code/run_prompt.py \
      --learning_rate_for_new_token 1e-5 \
      --num_train_epochs 5 \
      --max_grad_norm 2 \
-     --rel2id_dir ./data/tacred/rela2id.json
+     --rel2id_dir ./data/retacred/rela2id.json
 
 
 

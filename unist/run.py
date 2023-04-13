@@ -510,7 +510,7 @@ def main():
                         help="Where to find model checkpoints for evluation")
     parser.add_argument('--eval_name', default='test', type=str, help='测试的数据集的名称')
     parser.add_argument('--train_name', default='train', type=str, help='训练模型的文件')
-    parser.add_argument('--eval_only', action='store_true') # 只是评价模型
+    parser.add_argument('--eval_only', action='store_true') # 只用来评价测试集的模型
     parser.add_argument('--use_pseudo', action='store_true') # 使用伪数据就是我们的模型
     parser.add_argument('--ablation', action='store_true') # 对比实验
     # parser.add_argument('--aug_weight', default=0., type=float, help='伪数据的权重')
@@ -581,10 +581,11 @@ def main():
     if any(task for task in args.eval_tasks if task not in ["tacred", "ufet", "maven", "fewrel", 'retacred']):
         raise ValueError("eval tasks must be tacred, ufet, maven, or fewrel")
 
-    if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train and not args.overwrite_output_dir:
+    # * 短路求值，优先判断处于训练模式
+    if args.do_train and os.path.exists(args.output_dir) and os.listdir(args.output_dir) and not args.overwrite_output_dir:
         raise ValueError("Output directory ({}) already exists and is not empty. Use --overwrite_output_dir to overcome.".format(args.output_dir))
 
-    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
+    if args.do_train and not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(args.output_dir)
 
     # Setup CUDA, GPU & distributed training
@@ -600,12 +601,13 @@ def main():
     args.device = device
 
     # Setup logging
-    logging.basicConfig(filename=os.path.join(args.output_dir, "logs.log"),
-    	                format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-                        datefmt="%m/%d/%Y %H:%M:%S",
-                        level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
-    logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s",
-                    args.local_rank, device, args.n_gpu, bool(args.local_rank != -1))
+    if args.do_train:
+        logging.basicConfig(filename=os.path.join(args.output_dir, "logs.log"),
+                            format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+                            datefmt="%m/%d/%Y %H:%M:%S",
+                            level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
+        logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s",
+                        args.local_rank, device, args.n_gpu, bool(args.local_rank != -1))
 
     # Set seed
     set_seed(args)
@@ -622,7 +624,7 @@ def main():
     config.use_pseudo = args.use_pseudo
     config.ablation = args.ablation
     
-    # TODO: 切换为autoTokenizer和use_fast
+    # * 切换为autoTokenizer和use_fast
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                                 cache_dir=args.cache_dir if args.cache_dir else None,
                                                 add_prefix_space=True,
@@ -655,12 +657,12 @@ def main():
         tacred_train_dataset = (
             # 定义自己的raw_labelset
             TACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, use_pseudo=args.use_pseudo)
-            if "tacred" in args.train_tasks
+            if "tacred" in args.train_tasks and not args.eval_only
             else None
         )
         tacred_dev_dataset = (
             TACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc)
-            if "tacred" in args.eval_tasks
+            if "tacred" in args.eval_tasks and not args.eval_only
             else None
         )
         tacred_test_dataset = (
@@ -732,7 +734,7 @@ def main():
         train_dataset = ConcatDataset([
             dataset for dataset in [tacred_train_dataset, ufet_train_dataset, maven_train_dataset, fewrel_train_dataset, retacred_train_dataset]
             if dataset is not None
-        ])
+        ]) if args.do_train else None
         eval_datasets = {
             "tacred_dev": tacred_dev_dataset,
             "tacred_test": tacred_test_dataset,
@@ -753,6 +755,7 @@ def main():
 
 
     # Saving best-practices: if you use save_pretrained for the model and tokenizer, you can reload them using from_pretrained()
+    # 保存参数最好的模型
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("Saving model checkpoint to %s", args.output_dir)
         # Save a trained model, configuration and tokenizer using `save_pretrained()`.
@@ -770,7 +773,7 @@ def main():
         if args.eval_dir is None:
             checkpoints = [args.output_dir]
         else:
-            checkpoints = [args.eval_dir]
+            checkpoints = [args.eval_dir] # 从eval_dir加载模型
 
         if args.eval_all_checkpoints:
             checkpoints = list(os.path.dirname(c) for c in sorted(glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True)))
@@ -780,12 +783,12 @@ def main():
 
         for checkpoint in checkpoints:
             num_epochs = checkpoint.split("-")[-1] #if len(checkpoints) > 1 else "end"    
-            model = UniSTModel.from_pretrained(checkpoint)
+            model = UniSTModel.from_pretrained(checkpoint) # 加载断点
             model.to(args.device)
             model_to_eval = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
 
             if "tacred" in args.eval_tasks:
-                if not args.eval_only:
+                if not args.eval_only: # 在验证集上评价
                     eval_tacred(args, eval_datasets["tacred_dev"], model_to_eval, tokenizer, num_epochs=num_epochs, split="dev")
                 eval_tacred(args, eval_datasets["tacred_test"], model_to_eval, tokenizer, num_epochs=num_epochs, split="test")
             if "retacred" in args.eval_tasks:
