@@ -619,11 +619,12 @@ class TypedEntityMarkerPunctNewTextEncoder(TypedEntityMarkerPunctTextEncoder):
                     sents += ['#']
                 new_char_oe = len(' '.join(sents)) - 1
             if i_t != ss and i_t != se and i_t != os and i_t != oe: sents += [token]
-        encoding = self.tokenizer.encode_plus(' '.join(sents))
+        encoding = self.tokenizer.encode_plus(' '.join(sents), max_length=self.max_seq_length)
         new_ss, new_os = encoding.char_to_token(new_char_ss), encoding.char_to_token(new_char_os)
         new_se, new_oe = encoding.char_to_token(new_char_se), encoding.char_to_token(new_char_oe)
 
-        input_ids = encoding['input_ids'][:self.max_seq_length]
+        input_ids = encoding['input_ids']
+        # input_ids = encoding['input_ids'][:self.max_seq_length]
 
         # if self.mask:  # 如果需要mask，则是直接替换成mask_token，不能直接换，因为还有实体类型信息
         #     pass

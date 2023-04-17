@@ -254,7 +254,7 @@ class TACRE_Dataset_t5(REPromptDataset):
             if name != 'no_relation':
                 labels_encode = tokenizer.encode(" ".join(labels + [self.extra_id_list[3]]), add_special_tokens=True)
                 self.prompt_id_2_label[self.rel2id[name]] = labels_encode
-            else: # 将no_relation放到最后一个？
+            else: # * 将no_relation放到最后一个？
                 # print(name)
                 assert self.rel2id[name] == len(self.rel2id) - 1
                 labels[0] = 'person'

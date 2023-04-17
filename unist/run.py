@@ -14,6 +14,7 @@ from eval_metric import macro, macro_fewshot, tacred_f1
 from model import UniSTModel
 from sklearn.metrics import (accuracy_score, f1_score, precision_score,
                              recall_score)
+from torch.cuda.amp import GradScaler
 from torch.utils.data import (ConcatDataset, DataLoader, RandomSampler,
                               SequentialSampler)
 from torch.utils.data.distributed import DistributedSampler
@@ -44,7 +45,7 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
         # batch[0]: sent
         # batch[1]: pos
         # batch[2]: neg
-        if not args.use_pseudo:
+        if not args.use_pseudo: # 不使用伪数据
             return list(map(list, zip(*batch)))
         else: # 使用伪数据
             batch1 = [d[0] for d in batch] # 原始数据
@@ -64,6 +65,7 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
         {"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], "weight_decay": args.weight_decay},
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
     ]
+    scaler = GradScaler()
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps)
 
@@ -132,13 +134,20 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
             loss = model(**inputs)
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps               
-            loss.backward()
+            scaler.scale(loss).backward()
+            # loss.backward()
                        
+            # 使用梯度缩放尽可能避免下溢出
             if (step + 1) % args.gradient_accumulation_steps == 0:
+                scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
-                optimizer.step()
-                scheduler.step()  # Update learning rate schedule
+                scaler.step(optimizer)
+                scaler.update()
+                scheduler.step()
                 model.zero_grad()
+                # optimizer.step()
+                # scheduler.step()  # Update learning rate schedule
+                # model.zero_grad()
                 num_steps += 1
 
 

@@ -25,7 +25,7 @@ from utils import collate_fn, predict, set_seed
 def train(args, model, train_features, benchmarks, no_relation, ckpt_dir, eval_first=False, writer=None):
     # print(len(train_features))
     train_dataloader = DataLoader(train_features, batch_size=args.train_batch_size, shuffle=True,
-                                  collate_fn=collate_fn,
+                                  collate_fn=lambda batch: collate_fn(batch, not args.use_baseline),
                                   drop_last=False)
                                 #   drop_last=True)
     total_steps = int(len(train_dataloader) * args.num_train_epochs // args.gradient_accumulation_steps)
@@ -255,7 +255,7 @@ def main():
     # test_rev_file = os.path.join(args.data_dir, "test_rev.json")
 
                         #   entity_type2id)
-    processor = Processor(args.input_format, tokenizer, args.max_seq_length, rela2id)
+    processor = Processor(args.input_format, tokenizer, args.max_seq_length, rela2id, use_pseudo=not args.use_baseline) # 非use_baseline就是use_pseudo
 
     # 缓存一些生成的文件
     data_cache_dir = os.path.join(args.data_cache_dir, dataset, args.input_format)

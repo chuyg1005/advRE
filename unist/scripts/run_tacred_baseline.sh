@@ -13,7 +13,7 @@
 export CUDA_VISIBLE_DEVICES=0;
 python run.py \
 --data_dir ../../re-datasets/tacred \
---output_dir output/tacred-baseline/roberta-base \
+--output_dir output/tacred-baseline-gradscaled/roberta-base \
 --train_name train \
 --train_tasks tacred \
 --eval_tasks tacred \

@@ -79,15 +79,21 @@ def convert_token(token):
 #     return train_collate_fn
 
 
-def collate_fn(batch):
+def collate_fn(batch, use_pseudo):
     # 需要处理一个元素具有两个的情况，如果是一个就是下面的流程，两个则需要额外处理一下
     # 检查一个元素是否是具有两个
-    if len(batch[0]) != 2:
-        pass
-    else:
-        batch1 = [f[0] for f in batch] # 原始的数据
-        batch2 = [f[1] for f in batch] # 增强的数据
-        batch = batch1 + batch2 # 将两个batch拼接起来
+    if use_pseudo:
+        # 使用伪数据
+        batch1 = [f[0] for f in batch]
+        indices = np.random.randint(1, len(batch[0]), len(batch))
+        batch2 = [batch[i][indices[i]] for i in range(len(batch))]
+        batch = batch1 + batch2
+    # if len(batch[0]) != 2:
+    #     pass
+    # else:
+    #     batch1 = [f[0] for f in batch] # 原始的数据
+    #     batch2 = [f[1] for f in batch] # 增强的数据
+    #     batch = batch1 + batch2 # 将两个batch拼接起来
     max_len = max([len(f["input_ids"]) for f in batch])
     input_ids = [f["input_ids"] + [0] * (max_len - len(f["input_ids"])) for f in batch]
     input_mask = [[1.0] * len(f["input_ids"]) + [0.0] * (max_len - len(f["input_ids"])) for f in batch]

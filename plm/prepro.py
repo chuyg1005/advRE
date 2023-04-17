@@ -10,7 +10,7 @@ from utils import convert_token
 
 
 class Processor:
-    def __init__(self, input_format, tokenizer, max_seq_length, rela2id):
+    def __init__(self, input_format, tokenizer, max_seq_length, rela2id, use_pseudo):
         super().__init__()
         # self.args = args
         self.input_format = input_format
@@ -18,6 +18,7 @@ class Processor:
         self.tokenizer = tokenizer
         self.LABEL_TO_ID = rela2id
         # self.entity_type2id = entity_type2id
+        self.use_pseudo = use_pseudo
         self.text_encoder = TextEncoder.build_text_encoder(input_format, tokenizer, max_seq_length)
 
     def tokenize(self, tokens, subj_type, obj_type, ss, se, os, oe, mask_rate, all):
@@ -76,11 +77,14 @@ class Processor:
         # obj_dict = {}
 
         if mode == 'train': # 训练模式并且每个具有两个样本
-            if len(data[0]) == 2:
+            if self.use_pseudo:
+            # if len(data[0]) == 2:
+                features = []
                 for d in tqdm(data):
-                    feature1 = self.get_feature(d[0], mask_rate, all)
-                    feature2 = self.get_feature(d[1], mask_rate, all)
-                    feature = [feature1, feature2]
+                    feature = []
+                    for sample in d:
+                        f = self.get_feature(sample, mask_rate, all)
+                        feature.append(f)
                     features.append(feature)
             else:
                 for d in tqdm(data): # 只有一个样本
