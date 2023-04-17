@@ -129,6 +129,10 @@ def get_args_parser():
     parser.add_argument("--mode", type=int, default=0, help="训练模型（0: baseline, 1: ours, 2: ablation).")
     parser.add_argument("--train_name", type=str, default="train", help="训练集的文件名")
 
+    # * 判断是否需要进行训练
+    parser.add_argument("--eval_only", action="store_true", help="用来评价模型")
+    parser.add_argument("--eval_name", default='test', type=str, help="评价数据文件的名称")
+
     args = parser.parse_args()
     args.n_gpu = torch.cuda.device_count()
 

@@ -8,6 +8,8 @@ import random
 
 import numpy as np
 import torch
+from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
+                  RETACREDDataset, TACREDDataset, UFETDataset)
 from eval_metric import macro, macro_fewshot, tacred_f1
 from model import UniSTModel
 from sklearn.metrics import (accuracy_score, f1_score, precision_score,
@@ -19,9 +21,6 @@ from tqdm import tqdm, trange
 from transformers import (WEIGHTS_NAME, AdamW, AutoTokenizer, RobertaConfig,
                           get_linear_schedule_with_warmup)
 
-from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
-                  RETACREDDataset, TACREDDataset, UFETDataset)
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +29,7 @@ def set_seed(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if args.n_gpu > 0:
+        print(f"let's us {args.n_gpu} gpus.") 
         torch.cuda.manual_seed_all(args.seed)
 
 def train(args, train_dataset, eval_datasets, model, tokenizer):
@@ -142,6 +142,7 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
                 num_steps += 1
 
 
+        # local_rank为-1表示单卡，0表示是master
         if args.local_rank in [-1, 0] and args.logging_epochs > 0 and (epoch + 1) % args.logging_epochs == 0:
             # 进行评价
             if args.eval_during_training:  
@@ -160,12 +161,14 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
                 if "fewrel" in args.eval_tasks:
                     eval_fewrel(args, eval_datasets["fewrel_dev"], model_to_eval, tokenizer, num_epochs=epoch+1, split="dev")
 
+        # 开始保存模型
         if args.local_rank in [-1, 0] and args.save_epochs > 0 and (epoch+1) % args.save_epochs == 0 and epoch > 0.7*args.num_train_epochs:
             # Save model checkpoint                    
             output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(epoch+1))
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)                               
             logger.info("Saving model checkpoint to %s", output_dir)
+            # 保存model.module（分布式训练场景下）
             model_to_save = model.module if hasattr(model, "module") else model  # Take care of distributed/parallel training
             model_to_save.save_pretrained(output_dir)
             torch.save(args, os.path.join(output_dir, "training_args.bin")) 
@@ -565,7 +568,8 @@ def main():
     # gpu
     parser.add_argument("--no_cuda", action="store_true",
                         help="Avoid using CUDA when available")
-    parser.add_argument("--local_rank", type=int, default=-1,
+    # 开启分布式训练，本地编号
+    parser.add_argument("--local_rank", type=int, default=-1, 
                         help="For distributed training: local_rank")
 
     # seed
@@ -585,13 +589,14 @@ def main():
     if args.do_train and os.path.exists(args.output_dir) and os.listdir(args.output_dir) and not args.overwrite_output_dir:
         raise ValueError("Output directory ({}) already exists and is not empty. Use --overwrite_output_dir to overcome.".format(args.output_dir))
 
+    # local_rank为0表示是master节点
     if args.do_train and not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(args.output_dir)
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        args.n_gpu = torch.cuda.device_count()
+        args.n_gpu = torch.cuda.device_count() # 统计gpu的数量
         
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)

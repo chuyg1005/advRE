@@ -9,6 +9,8 @@ class UniSTModel(RobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)       
         self.roberta = RobertaModel(config)      
+        # 启用梯度检查点会减少显存占用，但是会增加模型的训练时间（训练时间会翻倍，显存占用会降低）
+        # * 显存占用从28G->8G；训练时间从5min -> 6min30s
         self.roberta.gradient_checkpointing_enable()  # 启用梯度检查点
         self.margin = config.margin       
         self.init_weights()
