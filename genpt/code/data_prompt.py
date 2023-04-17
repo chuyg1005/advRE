@@ -230,7 +230,7 @@ class TACRE_Dataset_bart(REPromptDataset):
 class TACRE_Dataset_t5(REPromptDataset):
 
     def __init__(self, path=None, name=None, rel2id=None, tokenizer=None, pseudo_token=None, prompt_lens=None,
-                 mode="train"):
+                 mode="train", use_pseudo=False):
 
         super().__init__(path, name, rel2id, tokenizer, pseudo_token, prompt_lens, mode)
 
@@ -245,6 +245,8 @@ class TACRE_Dataset_t5(REPromptDataset):
 
         self.extra_id_list = ["<extra_id_0>", "<extra_id_1>", "<extra_id_2>", "<extra_id_3>"]
         self.get_labels(tokenizer)
+
+        self.use_pseudo = use_pseudo
 
     def get_labels(self, tokenizer):
 
@@ -267,11 +269,19 @@ class TACRE_Dataset_t5(REPromptDataset):
     def __getitem__(self, index):
         item = self.data[index]
         # 只有一条数据
-        if len(item) != 2:
+        if not self.use_pseudo:
             return self.get_feature(item)
-        # 有两条数据
         else:
-            return [self.get_feature(item[0]), self.get_feature(item[1])]
+            sample1 = item[0]
+            rand_idx = np.random.randint(1, len(item)) # 随机选择一个样本
+            sample2 = item[rand_idx]
+            # sample1 / sample2
+            return [self.get_feature(sample1), self.get_feature(sample2)]
+        # if len(item) != 2:
+        #     return self.get_feature(item)
+        # # 有两条数据
+        # else:
+        #     return [self.get_feature(item[0]), self.get_feature(item[1])]
 
     def get_feature(self, item):
         # 获取第index条数据

@@ -1,7 +1,7 @@
+import json
 import os
 import random
 import sys
-import json
 import time
 from operator import itemgetter
 
@@ -87,7 +87,8 @@ train_dataset = dadaset(
     tokenizer=tokenizer,
     pseudo_token=args.pseudo_token,
     prompt_lens=args.prompt_lens,
-    mode="train"
+    mode="train",
+    use_pseudo=args.mode != 0 # 不是0就是使用了psuedo data
 ) if not args.eval_only else None
 
 val_dataset = dadaset(

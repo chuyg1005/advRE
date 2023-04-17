@@ -123,7 +123,7 @@ def collate_fn(batch, use_pseudo):
 
 
 def predict(model, features, test_batch_size, device):
-    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=collate_fn, drop_last=False)
+    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, False), drop_last=False)
     keys, preds = [], []
     model.eval()
     for i_b, batch in enumerate(tqdm(dataloader)):
