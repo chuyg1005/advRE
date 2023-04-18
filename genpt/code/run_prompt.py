@@ -110,7 +110,8 @@ test_dataset = dadaset(
     tokenizer=tokenizer,
     pseudo_token=args.pseudo_token,
     prompt_lens=args.prompt_lens,
-    mode="test"
+    mode="test",
+    mask_entity=args.mask_entity
 )
 
 train_batch_size = args.per_gpu_train_batch_size
@@ -240,7 +241,8 @@ model.load_state_dict(torch.load(args.output_dir + "/" + '{}-best_parameter'.for
 start_test_time = time.time()
 if args.eval_only:
     # 保存到eval_name里面
-    mi_f1, ma_f1 = evaluate(model, test_dataset, test_dataloader, save_path=os.path.join(args.output_dir, args.eval_name + '.json'))
+    save_path = args.eval_name + '.json' if not args.mask_entity else args.eval_name + '_mask.json'
+    mi_f1, ma_f1 = evaluate(model, test_dataset, test_dataloader, save_path=os.path.join(args.output_dir, save_path))
 else:
     mi_f1, ma_f1 = evaluate(model, test_dataset, test_dataloader)
 end_test_time = time.time()

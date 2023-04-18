@@ -4,7 +4,7 @@ for model_name in 'ours'; do
      python code/run_prompt.py \
           --data_name tacred \
           --data_dir ../../re-datasets/tacred \
-          --output_dir ./results/tacred_${model_name} \
+          --output_dir /home/nlper_data/chuyg/ckpts/genpt/results/tacred_${model_name} \
           --model_type T5 \
           --model_name_or_path t5-base \
           --per_gpu_eval_batch_size 32 \

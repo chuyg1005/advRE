@@ -230,7 +230,7 @@ class TACRE_Dataset_bart(REPromptDataset):
 class TACRE_Dataset_t5(REPromptDataset):
 
     def __init__(self, path=None, name=None, rel2id=None, tokenizer=None, pseudo_token=None, prompt_lens=None,
-                 mode="train", use_pseudo=False):
+                 mode="train", use_pseudo=False, mask_entity=False):
 
         super().__init__(path, name, rel2id, tokenizer, pseudo_token, prompt_lens, mode)
 
@@ -240,6 +240,8 @@ class TACRE_Dataset_t5(REPromptDataset):
             self.NA_NUM = self.rel2id['no_relation']
         else:
             self.NA_NUM = self.rel2id['NA']
+
+        self.mask_entity = mask_entity
 
         self.temps = get_temps_re()
 
@@ -341,7 +343,14 @@ class TACRE_Dataset_t5(REPromptDataset):
         relation = item['relation']
         ss, se = item['subj_start'], item['subj_end']
         os, oe = item['obj_start'], item['obj_end']
+
+        # mask_entity进行测试
+        if self.mask_entity:
+            sentence[ss:se+1] = [self.tokenizer.mask_token] * (se + 1 - ss)
+            sentence[os:oe+1] = [self.tokenizer.mask_token] * (oe + 1 - os)
+
         e1, e2 = sentence[ss: se + 1], sentence[os: oe + 1]
+
 
         subj_type, obj_type = item['subj_type'].lower().split("_"), item['obj_type'].lower().split("_")
         type_pairs_index = self.type_pairs.index(item['subj_type'].lower() + ":" + item['obj_type'].lower())

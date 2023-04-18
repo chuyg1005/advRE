@@ -4,7 +4,7 @@ for model_name in 'baseline' 'ours' 'ablation'; do
      python code/run_prompt.py \
           --data_name re-tacred \
           --data_dir ../../re-datasets/retacred \
-          --output_dir ./results/retacred_${model_name} \
+          --output_dir /home/nlper_data/chuyg/ckpts/genpt/results/retacred_${model_name} \
           --model_type T5 \
           --model_name_or_path t5-base \
           --per_gpu_eval_batch_size 32 \

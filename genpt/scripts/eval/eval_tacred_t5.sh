@@ -15,7 +15,8 @@ for model_name in 'ours'; do
           --learning_rate_for_new_token 1e-5 \
           --rel2id_dir ./data/tacred/rela2id.json \
           --eval_only \
-          --eval_name test
+          --eval_name test \
+          --mask_entity
 done
     #  --per_gpu_train_batch_size 4 \
     #  --gradient_accumulation_steps 1 \

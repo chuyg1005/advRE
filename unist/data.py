@@ -2,6 +2,7 @@ import json
 import random
 from collections import defaultdict
 
+import numpy as np
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
@@ -24,7 +25,7 @@ def convert_token(token):
 
 
 class TACREDDataset(Dataset):
-    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None):
+    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None, mask_entity=False, mask_token=None):
         self.data = []
         if raw_labelset is None:
             raw_labelset = ["no_relation", "per:title", "org:top_members/employees", "per:employee_of", "org:alternate_names", "org:country_of_headquarters", "per:countries_of_residence", "org:city_of_headquarters", "per:cities_of_residence", "per:age", "per:stateorprovinces_of_residence", "per:origin", "org:subsidiaries", "org:parents", "per:spouse", "org:stateorprovince_of_headquarters", "per:children", "per:other_family", "per:alternate_names", "org:members", "per:siblings", "per:schools_attended", "per:parents", "per:date_of_death", "org:member_of", "org:founded_by", "org:website", "per:cause_of_death", "org:political/religious_affiliation", "org:founded", "per:city_of_death", "org:shareholders", "org:number_of_employees/members", "per:date_of_birth", "per:city_of_birth", "per:charges", "per:stateorprovince_of_death", "per:religion", "per:stateorprovince_of_birth", "per:country_of_birth", "org:dissolved", "per:country_of_death"]
@@ -33,16 +34,22 @@ class TACREDDataset(Dataset):
         with open(data_file, "r") as f:
             data = json.load(f)
         
+        self.mask_entity = mask_entity
+        self.mask_token = mask_token
+
         # 是否使用伪数据
         self.use_pseudo = use_pseudo
         # 是否使用任务描述：task_desc
 
         for d in tqdm(data, desc="Preprocessing"):
-            if len(d) == 2:
-                assert self.use_pseudo
-                feature1 = self.get_feature(d[0], no_task_desc)
-                feature2 = self.get_feature(d[1], no_task_desc)
-                self.data.append([feature1, feature2])
+            # if len(d) == 2:
+            if self.use_pseudo:
+                # assert self.use_pseudo
+                features = []
+                for item in d:
+                    feature = self.get_feature(item, no_task_desc)
+                    features.append(feature)
+                self.data.append(features)
             else:
                 feature = self.get_feature(d, no_task_desc)
                 self.data.append(feature)
@@ -56,6 +63,10 @@ class TACREDDataset(Dataset):
         label = self.preprocess_label(label) # 处理标签
         assert label in self.labelset
         desc_ss = desc_se = desc_os = desc_oe = None
+
+        if self.mask_entity:
+            tokens[ss:se] = [self.mask_token] * (se - ss)
+            tokens[os:oe] = [self.mask_token] * (oe - os)
         
         # add marker and type (and task description if needed)
         if no_task_desc: # 不使用任务描述
@@ -105,20 +116,22 @@ class TACREDDataset(Dataset):
             feature = self.data[idx]
             neg = self.get_neg_label(feature)
             return feature[:2] + [neg] + feature[2:]
-        else: # 使用伪数据
+        else: # 使用伪数据，随机选择一个
             features = self.data[idx]
-            neg = self.get_neg_label(features[0]) 
-            return [feature[:2] + [neg] + feature[2:] for feature in features]
+            feature1 = features[0]
+            rand_idx = np.random.randint(1, len(features))
+            feature2 = features[rand_idx]
+            return [feature[:2] + [self.get_neg_label(feature)] + feature[2:] for feature in [feature1, feature2]]
             # return [self.add_neg_label(self.data[idx][0]), self.add_neg_label(self.data[idx][1])]
     
     def __len__(self):
         return len(self.data)    
 
 class RETACREDDataset(TACREDDataset):
-    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None):
+    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None, mask_entity=False, mask_token=None):
         # 定义自己的raw_labelset
         raw_labelset = ['no_relation', 'org:website', 'per:country_of_death', 'per:cause_of_death', 'per:children', 'per:origin', 'org:political/religious_affiliation', 'per:cities_of_residence', 'per:title', 'per:charges', 'per:religion', 'org:number_of_employees/members', 'per:city_of_death', 'per:city_of_birth', 'per:countries_of_residence', 'org:top_members/employees', 'org:city_of_branch', 'per:parents', 'per:employee_of', 'per:stateorprovince_of_birth', 'org:country_of_branch', 'org:dissolved', 'per:date_of_death', 'org:founded', 'per:age', 'per:country_of_birth', 'org:members', 'per:spouse', 'org:founded_by', 'per:date_of_birth', 'per:identity', 'per:stateorprovinces_of_residence', 'org:alternate_names', 'org:shareholders', 'org:member_of', 'per:schools_attended', 'org:stateorprovince_of_branch', 'per:other_family', 'per:siblings', 'per:stateorprovince_of_death']
-        super().__init__(data_file, no_task_desc, use_pseudo, raw_labelset)
+        super().__init__(data_file, no_task_desc, use_pseudo, raw_labelset, mask_entity, mask_token)
         
 
 class UFETDataset(Dataset):
@@ -312,4 +325,4 @@ if __name__ == "__main__":
     # sent_inputs = tokenizer([sent, sent], padding=True, truncation=True, max_length=128, return_tensors="pt", is_split_into_words=True)
     # print(type(sent_inputs))
     # print(dir(sent_inputs))
-    # print(sent_inputs)
+    # print(sent_inputs)    # print(sent_inputs)

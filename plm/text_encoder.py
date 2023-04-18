@@ -619,7 +619,7 @@ class TypedEntityMarkerPunctNewTextEncoder(TypedEntityMarkerPunctTextEncoder):
                     sents += ['#']
                 new_char_oe = len(' '.join(sents)) - 1
             if i_t != ss and i_t != se and i_t != os and i_t != oe: sents += [token]
-        encoding = self.tokenizer.encode_plus(' '.join(sents), max_length=self.max_seq_length)
+        encoding = self.tokenizer.encode_plus(' '.join(sents), max_length=self.max_seq_length, truncation=True)
         new_ss, new_os = encoding.char_to_token(new_char_ss), encoding.char_to_token(new_char_os)
         new_se, new_oe = encoding.char_to_token(new_char_se), encoding.char_to_token(new_char_oe)
 

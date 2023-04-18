@@ -108,10 +108,11 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
 
             desc_ss, desc_se, desc_os, desc_oe = batch[7], batch[8], batch[9], batch[10]
             if not args.no_task_desc:
-                desc_ss = torch.tensor([sent_inputs.word_to_tokens(idx, desc_ss[idx])[0] for idx in range(batch_size)], dtype=torch.long).to(args.device)
-                desc_se = torch.tensor([sent_inputs.word_to_tokens(idx, desc_se[idx])[1]-1 for idx in range(batch_size)], dtype=torch.long).to(args.device)
-                desc_os = torch.tensor([sent_inputs.word_to_tokens(idx, desc_os[idx])[0] for idx in range(batch_size)], dtype=torch.long).to(args.device)
-                desc_oe = torch.tensor([sent_inputs.word_to_tokens(idx, desc_oe[idx])[1]-1 for idx in range(batch_size)], dtype=torch.long).to(args.device)
+                # 超过范围可能为None，替换为0
+                desc_ss = torch.tensor([sent_inputs.word_to_tokens(idx, desc_ss[idx])[0] if sent_inputs.word_to_tokens(idx, desc_ss[idx]) is not None else 0 for idx in range(batch_size)], dtype=torch.long).to(args.device)
+                desc_se = torch.tensor([sent_inputs.word_to_tokens(idx, desc_se[idx])[1]-1 if sent_inputs.word_to_tokens(idx, desc_se[idx]) is not None else 0 for idx in range(batch_size)], dtype=torch.long).to(args.device)
+                desc_os = torch.tensor([sent_inputs.word_to_tokens(idx, desc_os[idx])[0] if sent_inputs.word_to_tokens(idx, desc_os[idx]) is not None else 0 for idx in range(batch_size)], dtype=torch.long).to(args.device)
+                desc_oe = torch.tensor([sent_inputs.word_to_tokens(idx, desc_oe[idx])[1]-1 if sent_inputs.word_to_tokens(idx, desc_oe[idx]) is not None else 0 for idx in range(batch_size)], dtype=torch.long).to(args.device)
             
             inputs = {
                 "sent_input_ids": sent_inputs["input_ids"],
@@ -585,6 +586,9 @@ def main():
     parser.add_argument("--seed", type=int, default=42,
                         help="random seed for initialization")
 
+
+    parser.add_argument('--mask_entity', action='store_true', help='mask entity name test.')
+
     args = parser.parse_args()
 
 
@@ -680,7 +684,7 @@ def main():
             else None
         )
         tacred_test_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc)
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token)
             if "tacred" in args.eval_tasks
             else None
         )
@@ -688,16 +692,16 @@ def main():
         retacred_train_dataset = (
             # 定义自己的raw_labelset
             RETACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, use_pseudo=args.use_pseudo)
-            if "retacred" in args.train_tasks
+            if "retacred" in args.train_tasks and not args.eval_only
             else None
         )
         retacred_dev_dataset = (
             RETACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc)
-            if "retacred" in args.eval_tasks
+            if "retacred" in args.eval_tasks and not args.eval_only
             else None
         )
         retacred_test_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc)
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token)
             if "retacred" in args.eval_tasks
             else None
         )

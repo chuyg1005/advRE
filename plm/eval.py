@@ -30,7 +30,7 @@ def main(opt):
     if os.path.exists(tokenizer_save_path):
         print(f'load tokenizer from {tokenizer_save_path}.')
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_save_path)
-    prepro = Processor(opt['input_format'], tokenizer, opt['max_seq_length'], rela2id)
+    prepro = Processor(opt['input_format'], tokenizer, opt['max_seq_length'], rela2id, use_pseudo=False)
     eval_file = os.path.join(opt['eval_data_dir'], 'splits', opt['dataset'] + '.json')
     features = prepro.read(eval_file, mode='dev', mask_rate=opt['mask_rate'], all=opt['all'])
 
