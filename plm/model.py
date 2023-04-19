@@ -91,12 +91,13 @@ class REModel(nn.Module):
     def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, use_baseline=False, ablation=False):
         # 基础模型，直接返回
         sz = input_ids.size(0) // 2
-        if use_baseline: # 基础模型
-            logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
-            loss = F.cross_entropy(logits, labels[:sz]) 
-            return loss
+        # if use_baseline: # 基础模型
+        #     logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+        #     loss = F.cross_entropy(logits, labels[:sz]) 
+        #     return loss
 
-        if ablation:
+        # * use_baseline的时候需要传入原始的数据
+        if ablation or use_baseline:
             logits = self(input_ids, attention_mask, ss, os)
             loss = F.cross_entropy(logits, labels)
             return loss

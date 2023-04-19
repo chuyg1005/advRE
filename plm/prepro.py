@@ -79,7 +79,6 @@ class Processor:
         if mode == 'train': # 训练模式并且每个具有两个样本
             if self.use_pseudo:
             # if len(data[0]) == 2:
-                features = []
                 for d in tqdm(data):
                     feature = []
                     for sample in d:
@@ -88,9 +87,11 @@ class Processor:
                     features.append(feature)
             else:
                 for d in tqdm(data): # 只有一个样本
-                    feature1 = self.get_feature(d, mask_rate, all)
-                    feature2 = self.get_feature(d, mask_rate, all)
-                    feature = [feature1, feature2]
+                    # feature1 = self.get_feature(d, mask_rate, all)
+                    # feature2 = self.get_feature(d, mask_rate, all)
+                    # feature = [feature1, feature2]
+                    feature = self.get_feature(d, mask_rate, all)
+
                     features.append(feature)
         else:
             for d in tqdm(data):
