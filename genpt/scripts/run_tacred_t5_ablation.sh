@@ -33,8 +33,8 @@ export CUDA_VISIBLE_DEVICES=2;
 #
 python code/run_prompt.py \
      --data_name tacred \
-     --data_dir ../../data/re-datasets/tacred \
-     --output_dir ./results/tacred_ablation \
+     --data_dir ../../re-datasets/tacred \
+     --output_dir ./results/tacred_ablation_new \
      --model_type T5 \
      --model_name_or_path t5-base \
      --per_gpu_train_batch_size 4 \
@@ -49,7 +49,7 @@ python code/run_prompt.py \
      --num_train_epochs 5 \
      --max_grad_norm 2 \
      --rel2id_dir ./data/tacred/rela2id.json \
-     --train_name train-aug \
+     --train_name train-gpt2 \
      --mode 2
 
 

@@ -10,11 +10,11 @@
 # --num_train_epochs 100 \
 # --per_gpu_train_batch_size 64 \
 # --model_name_or_path roberta-base \
-export CUDA_VISIBLE_DEVICES=2;
+export CUDA_VISIBLE_DEVICES=3;
 python run.py \
 --data_dir ../../re-datasets/tacred \
 --output_dir output/tacred-ours_new/roberta-base \
---train_name train-test \
+--train_name train-gpt2 \
 --train_tasks tacred \
 --eval_tasks tacred \
 --do_train \

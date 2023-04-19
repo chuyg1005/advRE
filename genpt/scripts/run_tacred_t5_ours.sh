@@ -50,7 +50,7 @@ python code/run_prompt.py \
      --max_grad_norm 2 \
      --rel2id_dir ./data/tacred/rela2id.json \
      --mode 1 \
-     --train_name train-test
+     --train_name train-gpt2
 
 
 
