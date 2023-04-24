@@ -25,7 +25,7 @@ def convert_token(token):
 
 
 class TACREDDataset(Dataset):
-    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None, mask_entity=False, mask_token=None):
+    def __init__(self, data_file, no_task_desc=False, raw_labelset=None, mask_entity=False, mask_token=None, mode='train'):
         self.data = []
         if raw_labelset is None:
             raw_labelset = ["no_relation", "per:title", "org:top_members/employees", "per:employee_of", "org:alternate_names", "org:country_of_headquarters", "per:countries_of_residence", "org:city_of_headquarters", "per:cities_of_residence", "per:age", "per:stateorprovinces_of_residence", "per:origin", "org:subsidiaries", "org:parents", "per:spouse", "org:stateorprovince_of_headquarters", "per:children", "per:other_family", "per:alternate_names", "org:members", "per:siblings", "per:schools_attended", "per:parents", "per:date_of_death", "org:member_of", "org:founded_by", "org:website", "per:cause_of_death", "org:political/religious_affiliation", "org:founded", "per:city_of_death", "org:shareholders", "org:number_of_employees/members", "per:date_of_birth", "per:city_of_birth", "per:charges", "per:stateorprovince_of_death", "per:religion", "per:stateorprovince_of_birth", "per:country_of_birth", "org:dissolved", "per:country_of_death"]
@@ -36,14 +36,15 @@ class TACREDDataset(Dataset):
         
         self.mask_entity = mask_entity
         self.mask_token = mask_token
+        self.mode = mode
 
         # 是否使用伪数据
-        self.use_pseudo = use_pseudo
+        # self.use_pseudo = use_pseudo
         # 是否使用任务描述：task_desc
 
         for d in tqdm(data, desc="Preprocessing"):
             # if len(d) == 2:
-            if self.use_pseudo:
+            if self.mode == 'train':
                 # assert self.use_pseudo
                 features = []
                 for item in d:
@@ -112,7 +113,7 @@ class TACREDDataset(Dataset):
         # return feature[:2] + [neg] + feature[2:] # sent, pos, neg, ss, se, os, oe
 
     def __getitem__(self, idx):
-        if not self.use_pseudo: # 加上一个负标签
+        if self.mode != 'train':
             feature = self.data[idx]
             neg = self.get_neg_label(feature)
             return feature[:2] + [neg] + feature[2:]

@@ -88,7 +88,6 @@ train_dataset = dadaset(
     pseudo_token=args.pseudo_token,
     prompt_lens=args.prompt_lens,
     mode="train",
-    use_pseudo=args.mode != 0 # 不是0就是使用了psuedo data
 ) if not args.eval_only else None
 
 val_dataset = dadaset(
@@ -117,18 +116,16 @@ test_dataset = dadaset(
 train_batch_size = args.per_gpu_train_batch_size
 val_batch_size = args.per_gpu_eval_batch_size
 
-def collate_fn(batch):
+def collate_fn(batch, mode='train'):
     # print(len(batch)) # batch_size, 4
     # print(len(batch[0])) # batch的第一条数据, 7
     # if len(batch[0]) != 2: # 没有增强的数据
         # batch = list(map(torch.stack, map(list, zip(*batch)))) # 不使用外部数据
     # else: # 有增强的数据
-    if len(batch[0]) == 2:
+    if mode == 'train': # 训练模式具有两条数据
         batch1 = [d[0] for d in batch]
         batch2 = [d[1] for d in batch]
         batch = batch1 + batch2
-    else:
-        assert args.mode == 0
     # print(len(batch)) # 7
     # print(len(batch[0]))
     batch = list(map(torch.stack, map(list, zip(*batch))))

@@ -10,11 +10,11 @@
 # --num_train_epochs 100 \
 # --per_gpu_train_batch_size 64 \
 # --model_name_or_path roberta-base \
-export CUDA_VISIBLE_DEVICES=0;
+export CUDA_VISIBLE_DEVICES=3;
 python run.py \
 --data_dir ../../re-datasets/tacred \
---output_dir output/tacred-baseline-gradscaled/roberta-base \
---train_name train \
+--output_dir output/tacred-baseline-baseline/roberta-base \
+--train_name train-gpt2 \
 --train_tasks tacred \
 --eval_tasks tacred \
 --do_train \
@@ -24,7 +24,8 @@ python run.py \
 --num_train_epochs 100 \
 --max_sent_length 512 \
 --per_gpu_train_batch_size 64 \
---model_name_or_path roberta-base 
+--model_name_or_path roberta-base \
+--mode baseline
 # --no_task_desc \
 # --learning_rate 3e-5 \
 # 设置max_sent_length防止实体超出句子范围

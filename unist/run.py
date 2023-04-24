@@ -8,8 +8,6 @@ import random
 
 import numpy as np
 import torch
-from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
-                  RETACREDDataset, TACREDDataset, UFETDataset)
 from eval_metric import macro, macro_fewshot, tacred_f1
 from model import UniSTModel
 from sklearn.metrics import (accuracy_score, f1_score, precision_score,
@@ -21,6 +19,9 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 from transformers import (WEIGHTS_NAME, AdamW, AutoTokenizer, RobertaConfig,
                           get_linear_schedule_with_warmup)
+
+from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
+                  RETACREDDataset, TACREDDataset, UFETDataset)
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +40,13 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
 
-    def collate_fn(batch):
+    def collate_fn(batch, mode='train'):
         # 不使用伪数据
         # batch: [(sent, pos, neg)]
         # batch[0]: sent
         # batch[1]: pos
         # batch[2]: neg
-        if not args.use_pseudo: # 不使用伪数据
+        if mode != 'train':
             return list(map(list, zip(*batch)))
         else: # 使用伪数据
             batch1 = [d[0] for d in batch] # 原始数据
@@ -128,7 +129,8 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
                 "desc_ss": desc_ss,
                 "desc_se": desc_se,
                 "desc_os": desc_os,
-                "desc_oe": desc_oe
+                "desc_oe": desc_oe,
+                'train_mode': args.train_mode
             }
 
             # 输入到模型
@@ -524,8 +526,9 @@ def main():
     parser.add_argument('--eval_name', default='test', type=str, help='测试的数据集的名称')
     parser.add_argument('--train_name', default='train', type=str, help='训练模型的文件')
     parser.add_argument('--eval_only', action='store_true') # 只用来评价测试集的模型
-    parser.add_argument('--use_pseudo', action='store_true') # 使用伪数据就是我们的模型
-    parser.add_argument('--ablation', action='store_true') # 对比实验
+    parser.add_argument('--train_mode', default='baseline', type=str, help='baseline / data-aug / ours')
+    # parser.add_argument('--use_pseudo', action='store_true') # 使用伪数据就是我们的模型
+    # parser.add_argument('--ablation', action='store_true') # 对比实验
     # parser.add_argument('--aug_weight', default=0., type=float, help='伪数据的权重')
 
 
@@ -639,8 +642,8 @@ def main():
     config.margin = args.margin
     config.no_task_desc = args.no_task_desc
     # config.aug_weight = args.aug_weight
-    config.use_pseudo = args.use_pseudo
-    config.ablation = args.ablation
+    # config.use_pseudo = args.use_pseudo
+    # config.ablation = args.ablation
     
     # * 切换为autoTokenizer和use_fast
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
@@ -674,34 +677,34 @@ def main():
         # tacred
         tacred_train_dataset = (
             # 定义自己的raw_labelset
-            TACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, use_pseudo=args.use_pseudo)
+            TACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, mode='train')
             if "tacred" in args.train_tasks and not args.eval_only
             else None
         )
         tacred_dev_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc)
+            TACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc, mode='dev')
             if "tacred" in args.eval_tasks and not args.eval_only
             else None
         )
         tacred_test_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token)
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
             if "tacred" in args.eval_tasks
             else None
         )
         # retacred(TODO：加入retacred)
         retacred_train_dataset = (
             # 定义自己的raw_labelset
-            RETACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, use_pseudo=args.use_pseudo)
+            RETACREDDataset(os.path.join(args.data_dir, args.train_name + '.json'), no_task_desc=args.no_task_desc, mode='train')
             if "retacred" in args.train_tasks and not args.eval_only
             else None
         )
         retacred_dev_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc)
+            RETACREDDataset(os.path.join(args.data_dir, "dev.json"), no_task_desc=args.no_task_desc, mode='dev')
             if "retacred" in args.eval_tasks and not args.eval_only
             else None
         )
         retacred_test_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token)
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
             if "retacred" in args.eval_tasks
             else None
         )

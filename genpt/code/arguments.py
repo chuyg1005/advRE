@@ -126,6 +126,7 @@ def get_args_parser():
     # * 0: baseline
     # * 1: ours
     # * 2: ablation
+    parser.add_argument('--train_mode', type=str, default='baseline', help='baseline / data-aug / ours')
     parser.add_argument("--mode", type=int, default=0, help="训练模型（0: baseline, 1: ours, 2: ablation).")
     parser.add_argument("--train_name", type=str, default="train", help="训练集的文件名")
     parser.add_argument('--mask_entity', action='store_true', help='mask_entity')

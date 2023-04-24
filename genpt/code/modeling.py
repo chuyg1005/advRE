@@ -125,6 +125,7 @@ class Model(torch.nn.Module):
         # print(baseline.shape)
         sent_scores = sent_scores - baseline[:sent_scores.numel()]
         sent_scores = torch.clip(sent_scores, min=0).clone().detach()
+        sent_scores = torch.where(torch.isnan(sent_scores), torch.zeros_like(sent_scores), sent_scores)
 
         self.zero_grad() # 清空梯度
 
@@ -136,18 +137,15 @@ class Model(torch.nn.Module):
         # ent_pos: [batch_size, 4] / (ss, se, prpt_ss, prpt_se)
         sz = input_ids.size(0) // 2
         # 0表示baseline, 2表示直接混合伪数据训练，1表示使用我们的方法
-        if self.args.mode == 0 or self.args.mode == 2:
-            loss, logits = self.compute_loss(input_ids, attention_mask, target_ids, target_mask, target_labels)
-            # print(f"loss: {loss.item()}.")
+        if self.args.train_mode == 'baseline':
+            loss, logits = self.compute_loss(input_ids[:sz], attention_mask[:sz], target_ids[:sz], target_mask[:sz], target_labels[:sz])
             return loss, logits
-        else:
-            assert self.args.mode == 1
+        elif self.args.train_mode == 'data-aug':
+            loss, logits = self.compute_loss(input_ids, attention_mask, target_ids, target_mask, target_labels)
+            return loss, logits
+        elif self.args.train_mode == 'ours':
             scores = self.compute_scores(input_ids[:sz], attention_mask[:sz], target_ids[:sz], target_mask[:sz], target_labels[:sz], ent_pos[:sz])
-            # 开始计算损失
-
             loss, logits = self.compute_loss(input_ids, attention_mask, target_ids, target_mask, target_labels, reduction='none')
-
-            # loss = loss.reshape(target_labels.shape).mean(dim=1) # 因为是一个seq2seq的任务，重新计算一下损失规划到每个token上
 
             loss1, loss2 = loss.chunk(2) # 划分为两部分
 

@@ -13,7 +13,7 @@
 export CUDA_VISIBLE_DEVICES=3;
 python run.py \
 --data_dir ../../re-datasets/tacred \
---output_dir output/tacred-ours_new/roberta-base \
+--output_dir output/tacred/roberta-base-ours \
 --train_name train-gpt2 \
 --train_tasks tacred \
 --eval_tasks tacred \
@@ -25,7 +25,7 @@ python run.py \
 --max_sent_length 512 \
 --per_gpu_train_batch_size 64 \
 --model_name_or_path roberta-base \
---use_pseudo
+--train_mode ours
 # --no_task_desc \
 # --learning_rate 3e-5 \
 # 设置max_sent_length防止实体超出句子范围

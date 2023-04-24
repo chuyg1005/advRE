@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2;
+export CUDA_VISIBLE_DEVICES=3;
 
 # # few-shot
 # for k in 8 16 32
@@ -42,15 +42,15 @@ python code/run_prompt.py \
      --gradient_accumulation_steps 1 \
      --max_seq_length 512 \
      --max_ent_type_length 7 \
-       --max_label_length 9 \
+    --max_label_length 9 \
      --warmup_steps 500 \
      --learning_rate 3e-5 \
      --learning_rate_for_new_token 1e-5 \
      --num_train_epochs 5 \
      --max_grad_norm 2 \
      --rel2id_dir ./data/tacred/rela2id.json \
-     --mode 1 \
-     --train_name train-gpt2
+     --train_name train-gpt2 \
+     --train_mode ours
 
 
 

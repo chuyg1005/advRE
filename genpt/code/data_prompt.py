@@ -230,7 +230,7 @@ class TACRE_Dataset_bart(REPromptDataset):
 class TACRE_Dataset_t5(REPromptDataset):
 
     def __init__(self, path=None, name=None, rel2id=None, tokenizer=None, pseudo_token=None, prompt_lens=None,
-                 mode="train", use_pseudo=False, mask_entity=False):
+                 mode="train", mask_entity=False):
 
         super().__init__(path, name, rel2id, tokenizer, pseudo_token, prompt_lens, mode)
 
@@ -247,8 +247,6 @@ class TACRE_Dataset_t5(REPromptDataset):
 
         self.extra_id_list = ["<extra_id_0>", "<extra_id_1>", "<extra_id_2>", "<extra_id_3>"]
         self.get_labels(tokenizer)
-
-        self.use_pseudo = use_pseudo
 
     def get_labels(self, tokenizer):
 
@@ -270,8 +268,8 @@ class TACRE_Dataset_t5(REPromptDataset):
                 self.prompt_id_2_label[self.rel2id[name]+1] = labels_encode
     def __getitem__(self, index):
         item = self.data[index]
-        # 只有一条数据
-        if not self.use_pseudo:
+        # 训练模式下有多条数据，非训练模式下只有一条数据
+        if self.mode != 'train':
             return self.get_feature(item)
         else:
             sample1 = item[0]
