@@ -79,10 +79,11 @@ def convert_token(token):
 #     return train_collate_fn
 
 
-def collate_fn(batch, use_pseudo):
+def collate_fn(batch, mode='train'):
     # 需要处理一个元素具有两个的情况，如果是一个就是下面的流程，两个则需要额外处理一下
     # 检查一个元素是否是具有两个
-    if use_pseudo:
+    # * 训练模式下带伪数据的
+    if mode == 'train':
         # 使用伪数据
         batch1 = [f[0] for f in batch]
         indices = np.random.randint(1, len(batch[0]), len(batch))
@@ -123,7 +124,7 @@ def collate_fn(batch, use_pseudo):
 
 
 def predict(model, features, test_batch_size, device):
-    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, False), drop_last=False)
+    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, 'eval'), drop_last=False)
     keys, preds = [], []
     model.eval()
     for i_b, batch in enumerate(tqdm(dataloader)):

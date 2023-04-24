@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0;
 
 # # few-shot
 # for k in 8 16 32
@@ -34,7 +34,7 @@ export CUDA_VISIBLE_DEVICES=1
 python code/run_prompt.py \
      --data_name tacred \
      --data_dir ../../re-datasets/tacred \
-     --output_dir ./results/tacred_baseline \
+     --output_dir ./results/tacred/t5-base-baseline \
      --model_type T5 \
      --model_name_or_path t5-base \
      --per_gpu_train_batch_size 4 \

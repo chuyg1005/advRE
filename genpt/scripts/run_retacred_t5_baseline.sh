@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=3;
+export CUDA_VISIBLE_DEVICES=1;
 
 
 # for k in 8 16 32
@@ -31,8 +31,8 @@ export CUDA_VISIBLE_DEVICES=3;
 
 python3 code/run_prompt.py \
 --data_name re-tacred \
---data_dir ../../data/re-datasets/retacred \
---output_dir ./results/retacred_baseline \
+--data_dir ../../re-datasets/retacred \
+--output_dir ./results/retacred/t5-base-baseline \
 --model_type T5 \
 --model_name_or_path t5-base \
 --per_gpu_train_batch_size 4 \

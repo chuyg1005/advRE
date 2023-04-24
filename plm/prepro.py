@@ -10,7 +10,7 @@ from utils import convert_token
 
 
 class Processor:
-    def __init__(self, input_format, tokenizer, max_seq_length, rela2id, use_pseudo):
+    def __init__(self, input_format, tokenizer, max_seq_length, rela2id):
         super().__init__()
         # self.args = args
         self.input_format = input_format
@@ -18,7 +18,7 @@ class Processor:
         self.tokenizer = tokenizer
         self.LABEL_TO_ID = rela2id
         # self.entity_type2id = entity_type2id
-        self.use_pseudo = use_pseudo
+        # self.use_pseudo = use_pseudo
         self.text_encoder = TextEncoder.build_text_encoder(input_format, tokenizer, max_seq_length)
 
     def tokenize(self, tokens, subj_type, obj_type, ss, se, os, oe, mask_rate, all):
@@ -76,23 +76,14 @@ class Processor:
         # subj_dict = {}
         # obj_dict = {}
 
+        # 训练模式下带伪数据的
         if mode == 'train': # 训练模式并且每个具有两个样本
-            if self.use_pseudo:
-            # if len(data[0]) == 2:
-                for d in tqdm(data):
-                    feature = []
-                    for sample in d:
-                        f = self.get_feature(sample, mask_rate, all)
-                        feature.append(f)
-                    features.append(feature)
-            else:
-                for d in tqdm(data): # 只有一个样本
-                    # feature1 = self.get_feature(d, mask_rate, all)
-                    # feature2 = self.get_feature(d, mask_rate, all)
-                    # feature = [feature1, feature2]
-                    feature = self.get_feature(d, mask_rate, all)
-
-                    features.append(feature)
+            for d in tqdm(data):
+                feature = []
+                for sample in d:
+                    f = self.get_feature(sample, mask_rate, all)
+                    feature.append(f)
+                features.append(feature)
         else:
             for d in tqdm(data):
                 feature = self.get_feature(d, mask_rate, all)

@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2;
+export CUDA_VISIBLE_DEVICES=3;
 
 
 # for k in 8 16 32
@@ -32,7 +32,7 @@ export CUDA_VISIBLE_DEVICES=2;
 python3 code/run_prompt.py \
 --data_name re-tacred \
 --data_dir ../../data/re-datasets/retacred \
---output_dir ./results/retacred_ours \
+--output_dir ./results/retacred/t5-base-ours \
 --model_type T5 \
 --model_name_or_path t5-base \
 --per_gpu_train_batch_size 4 \
@@ -48,4 +48,4 @@ python3 code/run_prompt.py \
 --rel2id_dir ./data/retacred/rela2id.json \
 --max_grad_norm 2 \
 --mode 1 \
---train_name train-aug
+--train_name train-gpt2

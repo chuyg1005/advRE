@@ -25,7 +25,7 @@ from utils import collate_fn, predict, set_seed
 def train(args, model, train_features, benchmarks, no_relation, ckpt_dir, eval_first=False, writer=None):
     # print(len(train_features))
     train_dataloader = DataLoader(train_features, batch_size=args.train_batch_size, shuffle=True,
-                                  collate_fn=lambda batch: collate_fn(batch, not args.use_baseline),
+                                  collate_fn=lambda batch: collate_fn(batch, 'train'),
                                   drop_last=False)
                                 #   drop_last=True)
     total_steps = int(len(train_dataloader) * args.num_train_epochs // args.gradient_accumulation_steps)
@@ -60,8 +60,7 @@ def train(args, model, train_features, benchmarks, no_relation, ckpt_dir, eval_f
                       'se': batch[4].to(args.device),
                         'os': batch[5].to(args.device),
                         'oe': batch[6].to(args.device),
-                        'use_baseline': args.use_baseline,
-                        'ablation': args.ablation
+                        'train_mode': args.train_mode
                       }
             # outputs = model(**inputs)
             # # loss = outputs[0] / args.gradient_accumulation_steps
@@ -200,11 +199,12 @@ def main():
     parser.add_argument('--mask_rela', action='store_true', help='mask unknown relas.')
     parser.add_argument('--ckpt_dir', type=str, default='saved_models')
     parser.add_argument('--from_checkpoint', action='store_true')
-    parser.add_argument('--use_baseline', action='store_true') # 是否使用基础模型
-    parser.add_argument('--ablation', action='store_true')
+    # parser.add_argument('--use_baseline', action='store_true') # 是否使用基础模型
+    # parser.add_argument('--ablation', action='store_true')
     # parser.add_argument('--subs_rate', type=float, default=0., help='entity substitute rate.')
     # parser.add_argument('--kl_weight', type=float, default=0., help='kl div weight(0 means no kl div).')
     # parser.add_argument('--aug_weight', type=float, default=0., help='增加的伪数据的权重')
+    parser.add_argument('--train_mode', type=str, default='baseline', help='baseline / data-aug / ours')
     parser.add_argument('--train_name', type=str, default='train', help='训练集的名字，用于后期扩展伪数据')
     parser.add_argument('--model_name', type=str, default='model', help='存储最优模型的名称（best-mdoel_name.ckpt）')
 
@@ -255,7 +255,7 @@ def main():
     # test_rev_file = os.path.join(args.data_dir, "test_rev.json")
 
                         #   entity_type2id)
-    processor = Processor(args.input_format, tokenizer, args.max_seq_length, rela2id, use_pseudo=not args.use_baseline) # 非use_baseline就是use_pseudo
+    processor = Processor(args.input_format, tokenizer, args.max_seq_length, rela2id) # 非use_baseline就是use_pseudo
 
     # 缓存一些生成的文件
     data_cache_dir = os.path.join(args.data_cache_dir, dataset, args.input_format)

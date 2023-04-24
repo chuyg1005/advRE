@@ -87,22 +87,8 @@ class REModel(nn.Module):
         #    logits = self.mask_logits(logits, subj_type, obj_type)
             # return (logits,)
 
-    @autocast()
-    def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, use_baseline=False, ablation=False):
-        # 基础模型，直接返回
-        sz = input_ids.size(0) // 2
-        # if use_baseline: # 基础模型
-        #     logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
-        #     loss = F.cross_entropy(logits, labels[:sz]) 
-        #     return loss
-
-        # * use_baseline的时候需要传入原始的数据
-        if ablation or use_baseline:
-            logits = self(input_ids, attention_mask, ss, os)
-            loss = F.cross_entropy(logits, labels)
-            return loss
-
-
+    def compute_bias_score(self, input_ids, attention_mask, ss, se, os,oe, labels):
+        batch_sz = input_ids.size(0)
         # 我们的模型，先反向传播一次，再根据梯度得到第二波结果
         def backward_hook(module, gin, gout):
             # print('backward function is called.')
@@ -110,11 +96,11 @@ class REModel(nn.Module):
         
         hook = self.encoder.embeddings.word_embeddings.register_full_backward_hook(backward_hook)
         # 前半部分是原始数据，后半部分是增强后的数据
-        logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+        logits = self(input_ids, attention_mask, ss, os)
         # logits1, logits2 = logits.chunk(2) # 使用kl散度做约束
         # labels1, labels2 = labels.chunk(2) # 使用kl散度约束生成的关系向量
         # 计算真实数据的损失反向传播得到输入的重要性
-        loss = F.cross_entropy(logits, labels[:sz]) 
+        loss = F.cross_entropy(logits, labels) 
 
         # loss1 = self.loss_fnt(logits1, labels1)
         # 添加hook
@@ -134,7 +120,7 @@ class REModel(nn.Module):
         ent_lens = subj_lens + obj_lens
         baseline = ent_lens / sent_lens
         sent_scores = []
-        for i in range(logits.size(0)):
+        for i in range(batch_sz):
             ent_ss, ent_se = ss[i], se[i]
             ent_os, ent_oe = os[i], oe[i]
             subj_score = scores[i][ent_ss:ent_se+1].sum()
@@ -144,31 +130,44 @@ class REModel(nn.Module):
         sent_scores = torch.tensor(sent_scores).to(baseline.device)
         # print(sent_scores.shape)
         # print(baseline.shape)
-        sent_scores = sent_scores - baseline[:sent_scores.numel()]
+        sent_scores = sent_scores - baseline
         sent_scores = torch.clip(sent_scores, min=0).clone().detach()
-
-        # 计算出了分数
-        # 清空梯度
-        self.zero_grad()
-        logits = self(input_ids, attention_mask, ss, os)
-        logits1, logits2 = logits.chunk(2)
-        labels1, labels2 = labels.chunk(2)
-
-        loss1 = F.cross_entropy(logits1, labels1)
-        loss2 = F.cross_entropy(logits2, labels2, reduction='none')
-        # print(sent_scores)
-        # 因为计算梯度可能全部都是0，导致最后sent_score是nan，训练过程中会有问题，所以讲nan替换一下，避免出现问题
         sent_scores = torch.where(torch.isnan(sent_scores), torch.zeros_like(sent_scores), sent_scores)
-        loss2 = torch.dot(loss2, sent_scores) / sz
-        # 第二次backward
-        # loss2.backward()
-        # hook.remove() # 结束后记得删除hook
-        # print(sent_scores)
-        # print(f"real data loss: {loss1.item()}, aug data loss: {loss2.item()}.")
-        # print(loss1, loss2)
+        self.zero_grad() # 清空梯度
 
-        # 得到损失返回
-        return loss1 + loss2
+        return sent_scores
+
+    @autocast()
+    def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, train_mode='baseline'):
+        # 基础模型，直接返回
+        sz = input_ids.size(0) // 2
+        # if use_baseline: # 基础模型
+        #     logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+        #     loss = F.cross_entropy(logits, labels[:sz]) 
+        #     return loss
+
+        # * use_baseline的时候需要传入原始的数据
+        if train_mode == 'baseline':
+            logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
+            loss = F.cross_entropy(logits, labels[:sz])
+            return loss
+        elif train_mode == 'data_aug':
+            logits = self(input_ids, attention_mask, ss, os)
+            loss = F.cross_entropy(logits, labels[:sz])
+            return loss
+        elif train_mode == 'ours':
+            bias_scores = self.compute_bias_score(input_ids[:sz], attention_mask[:sz], ss[:sz], se[:sz], os[:sz], oe[:sz], labels[:sz])
+            logits = self(input_ids, attention_mask, ss, os)
+            logits1, logits2 = logits.chunk(2)
+            labels1, labels2 = labels.chunk(2)
+            loss1 = F.cross_entropy(logits1, labels1)
+            loss2 = F.cross_entropy(logits2, labels2, reduction='none')
+
+            loss2 = torch.dot(loss2, bias_scores) / sz
+            return loss1 + loss2
+        else:
+            assert 0, f'not support train_mode: {train_mode}.'
+            return loss
 
 
     # def mask_logits(self, logits, subj_type, obj_type):
