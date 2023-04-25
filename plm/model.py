@@ -137,26 +137,36 @@ class REModel(nn.Module):
 
         return sent_scores
 
-    @torch.no_grad()
-    def compute_scores(self, input_ids, attention_mask, ss, os, labels):
+    # @torch.no_grad()
+    def compute_ours_new_loss(self, input_ids, attention_mask, ss, os, labels):
+        sz = input_ids.size(0) // 2
         logits = self(input_ids, attention_mask, ss, os) # [batch_size, label_num]
 
         # 将 labels 转换为大小为 (batch_size, 1) 的张量
-        labels = labels.unsqueeze(1)
+        labels_new = labels.unsqueeze(1)
 
         # 使用 torch.gather 函数选择对应标签的 logit
-        logits = torch.gather(logits, 1, labels).squeeze(1) # [batch_sz]
+        selected_logits = torch.gather(logits, 1, labels_new).squeeze(1) # [batch_sz]
         # print(logits.shape)
 
-        logits1, logits2 = logits.chunk(2)
+        logits1, logits2 = selected_logits.chunk(2)
         aug = logits1 - logits2 # 越大说明entity-bias越严重
-        org = torch.zeros_like(aug)
+        # org = torch.zeros_like(aug)
+        # * 阈值会引入超参数，超参数调节麻烦，因此我们使用统计量减少调节超参数
+        # * 让一半的负样本起作用
+        # * 如果阈值直接是0结果太差（新实体，旧实体旧组合新关系都比不过，就mask能够比得过）
+        org = torch.full_like(aug, aug.median().item())
+        # print(f'median: {aug.median().item()}, mean: {aug.mean().item()}, min: {aug.min().item()}, max: {aug.max().item()}.')
         weights = torch.stack([org, aug], 0)
         # print(weights)
         # print(weights)
         weights = F.softmax(weights, 0).flatten()
 
-        return weights
+        weights = weights.clone().detach()
+
+        loss = F.cross_entropy(logits, labels, reduction='none')
+
+        return torch.dot(weights, loss) / sz
 
 
     @autocast()
@@ -188,12 +198,12 @@ class REModel(nn.Module):
             loss2 = torch.dot(loss2, bias_scores) / sz
             return loss1 + loss2
         elif train_mode == 'ours_new':
-            scores = self.compute_scores(input_ids, attention_mask, ss, os, labels)
-            logits = self(input_ids, attention_mask, ss, os)
-            loss = F.cross_entropy(logits, labels, reduction='none')
+            # scores = self.compute_scores(input_ids, attention_mask, ss, os, labels)
+            # logits = self(input_ids, attention_mask, ss, os)
+            # loss = F.cross_entropy(logits, labels, reduction='none')
 
-            loss = torch.dot(loss, scores) / sz
-            return loss
+            # loss = torch.dot(loss, scores) / sz
+            return self.compute_ours_new_loss(input_ids, attention_mask, ss, os, labels)
 
         else:
             assert 0, f'not support train_mode: {train_mode}.'

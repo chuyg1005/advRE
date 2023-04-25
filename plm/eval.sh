@@ -7,7 +7,7 @@ export CUDA_VISIBLE_DEVICES=1
 # for split in 'test_two_old_entity_new_pair' 'test_two_old_entity_old_pair_new_rela' 'test_two_old_entity_old_pair_old_rela'; do
 #     python eval.py --ckpt_dir saved_models/tacred/typed_entity_name_ours_new --eval_data_dir ../../re-datasets/tacred --dataset ${split};
 # done
-python eval.py --ckpt_dir saved_models/tacred/typed_entity_name_baseline --eval_data_dir ../../re-datasets/tacred --dataset test --mask_rate 1.;
+python eval.py --ckpt_dir saved_models/tacred/roberta-base-ours_new --eval_data_dir ../../re-datasets/tacred --dataset test --mask_rate 1.;
 
 # for dataset in 'semeval' 'wiki80' 'tacred' 'retacred'; do
 #     for filename in `ls ~/data/re-datasets/${dataset}/splits`; do

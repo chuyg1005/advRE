@@ -92,6 +92,29 @@ class Model(torch.nn.Module):
             loss = loss / target_lens # 重新归一化
         return loss, logits
     
+    # @torch.no_grad()
+    def compute_ours_new_loss(self, input_ids, attention_mask, target_ids, target_mask, target_labels):
+        sz = input_ids.size(0) // 2
+        loss, logits = self.compute_loss(input_ids, attention_mask, target_ids, target_mask, target_labels, reduction='none')
+        # 将 labels 转换为大小为 (batch_size, 1) 的张量
+        labels = target_labels.unsqueeze(1)
+
+        # 使用 torch.gather 函数选择对应标签的 logit
+        selected_logits = torch.gather(logits, 1, labels).squeeze(1) # [batch_sz]
+        # print(logits.shape)
+
+        logits1, logits2 = selected_logits.chunk(2)
+        aug = logits1 - logits2 # 越大说明entity-bias越严重
+        org = torch.zeros_like(aug)
+        weights = torch.stack([org, aug], 0)
+        # print(weights)
+        # print(weights)
+        weights = F.softmax(weights, 0).flatten()
+        weights = weights.clone().detach()
+
+        return torch.dot(weights, loss) / sz, logits
+
+
     def compute_scores(self, input_ids, attention_mask, target_ids, target_mask, target_labels, ent_pos):
         """计算每个句子的实体偏差得分"""
         def backward_hook(module, gin, gout):
@@ -150,6 +173,8 @@ class Model(torch.nn.Module):
             loss1, loss2 = loss.chunk(2) # 划分为两部分
 
             return loss1.mean() + torch.dot(loss2, scores) / sz, logits
+        elif self.args.train_mode == 'ours_new':
+            return self.compute_ours_new_loss(input_ids, attention_mask, target_ids, target_mask, target_labels)
 
 
 
