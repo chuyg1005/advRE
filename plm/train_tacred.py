@@ -46,7 +46,8 @@ def train(args, model, train_features, benchmarks, no_relation, ckpt_dir, eval_f
         eval_results = eval_model(args, model, benchmarks, no_relation, num_steps, writer)
         best_dev_f1 = eval_results['dev']
         test_f1 = eval_results['test']
-    evaluation_steps = len(train_dataloader) // 2  # 刚开始的时候一个epoch评价一次
+    # evaluation_steps = len(train_dataloader) // 2  # 刚开始的时候一个epoch评价一次
+    evaluation_steps = len(train_dataloader)
     min_eval_step = 100
     # model.save(os.path.join(ckpt_dir, f'best-{args.model_name}.ckpt'))
     for epoch in range(int(args.num_train_epochs)):

@@ -58,7 +58,7 @@ def get_args_parser():
 
     # Required parameters
 
-    parser.add_argument("--data_name", type=str, required=True, choices=['tacred', 'tacrev', 're-tacred', 'wiki80'],
+    parser.add_argument("--data_name", type=str, required=True, choices=['tacred', 'tacrev', 'retacred', 'wiki80'],
                         help="The name of data.")
     parser.add_argument("--data_dir", type=str, required=True,
                         help="The input data dir. Should contain the data files for the task.")

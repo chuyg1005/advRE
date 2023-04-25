@@ -151,9 +151,9 @@ class REModel(nn.Module):
             logits = self(input_ids[:sz], attention_mask[:sz], ss[:sz], os[:sz])
             loss = F.cross_entropy(logits, labels[:sz])
             return loss
-        elif train_mode == 'data_aug':
+        elif train_mode == 'data-aug':
             logits = self(input_ids, attention_mask, ss, os)
-            loss = F.cross_entropy(logits, labels[:sz])
+            loss = F.cross_entropy(logits, labels)
             return loss
         elif train_mode == 'ours':
             bias_scores = self.compute_bias_score(input_ids[:sz], attention_mask[:sz], ss[:sz], se[:sz], os[:sz], oe[:sz], labels[:sz])
