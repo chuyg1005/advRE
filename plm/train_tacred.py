@@ -184,7 +184,7 @@ def main():
                         help="Max gradient norm.")
     parser.add_argument("--warmup_ratio", default=0.1, type=float,
                         help="Warm up ratio for Adam.")
-    parser.add_argument("--num_train_epochs", default=5.0, type=float,
+    parser.add_argument("--num_train_epochs", default=10.0, type=float,
                         help="Total number of training epochs to perform.")
     parser.add_argument("--seed", type=int, default=42,
                         help="random seed for initialization")

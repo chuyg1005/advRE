@@ -10,7 +10,7 @@ python3 code/run_prompt.py \
     --data_dir ../../re-datasets/${dataset} \
     --output_dir ./results/${dataset}/${model_name}-${train_mode} \
     --model_type T5 \
-    --model_name_or_path ${mode_name} \
+    --model_name_or_path ${model_name} \
     --per_gpu_train_batch_size 4 \
     --per_gpu_eval_batch_size 32 \
     --gradient_accumulation_steps 1 \
