@@ -141,6 +141,24 @@ class REModel(nn.Module):
     def compute_scores(self, input_ids, attention_mask, ss, os, labels):
         logits = self(input_ids, attention_mask, ss, os) # [batch_size, label_num]
 
+        # 将 labels 转换为大小为 (batch_size, 1) 的张量
+        labels = labels.unsqueeze(1)
+
+        # 使用 torch.gather 函数选择对应标签的 logit
+        logits = torch.gather(logits, 1, labels).squeeze(1) # [batch_sz]
+        # print(logits.shape)
+
+        logits1, logits2 = logits.chunk(2)
+        aug = logits1 - logits2 # 越大说明entity-bias越严重
+        org = torch.zeros_like(aug)
+        weights = torch.stack([org, aug], 0)
+        # print(weights)
+        # print(weights)
+        weights = F.softmax(weights, 0).flatten()
+
+        return weights
+
+
     @autocast()
     def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, train_mode='baseline'):
         # 基础模型，直接返回
@@ -169,6 +187,14 @@ class REModel(nn.Module):
 
             loss2 = torch.dot(loss2, bias_scores) / sz
             return loss1 + loss2
+        elif train_mode == 'ours_new':
+            scores = self.compute_scores(input_ids, attention_mask, ss, os, labels)
+            logits = self(input_ids, attention_mask, ss, os)
+            loss = F.cross_entropy(logits, labels, reduction='none')
+
+            loss = torch.dot(loss, scores) / sz
+            return loss
+
         else:
             assert 0, f'not support train_mode: {train_mode}.'
             return loss
@@ -185,4 +211,5 @@ class REModel(nn.Module):
     #         mask[i, rela_ids] = 0.
     #     logits = logits - mask
 
+    #     return logits
     #     return logits

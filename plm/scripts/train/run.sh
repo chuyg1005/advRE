@@ -13,5 +13,4 @@ python train_tacred.py \
     --input_format typed_entity_marker_punct_new \
     --run_name ${model_name}-${train_mode} \
     --train_name train-gpt2 \
-    --seed 0 \
     --train_mode ${train_mode}
