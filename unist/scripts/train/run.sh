@@ -2,7 +2,8 @@
 export CUDA_VISIBLE_DEVICES=$1
 dataset=$2
 train_mode=$3
-model_name=roberta-base
+# model_name=roberta-base
+model_name=${4-roberta-base} # 默认选择roberta-base模型
 python run.py \
     --data_dir ../../re-datasets/${dataset} \
     --output_dir output/${dataset}/${model_name}-${train_mode} \
