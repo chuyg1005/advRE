@@ -14,7 +14,7 @@ class TextEncoder:
             return EntityNameOnlyTextEncoder(input_format, tokenizer, max_seq_length)
         elif input_format == 'entity_type_mask':
             return EntityMaskTextEncoder(input_format, tokenizer, max_seq_length, subj_types, obj_types)
-        elif input_format == 'entity_mask_new':
+        elif input_format == 'entity_mask_new': # 只有上下文信息
             return EntityMaskTextEncoderNew(input_format, tokenizer, max_seq_length, subj_types, obj_types)
         elif input_format == 'entity_marker':
             return EntityMarkerTextEncoder(input_format, tokenizer, max_seq_length)

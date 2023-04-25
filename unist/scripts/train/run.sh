@@ -18,8 +18,7 @@ python run.py \
     --max_sent_length 512 \
     --per_gpu_train_batch_size 64 \
     --model_name_or_path ${model_name} \
-    --train_mode ${train_mode} \
-    --seed 0
+    --train_mode ${train_mode}
 # --no_task_desc \
 # --learning_rate 3e-5 \
 # 设置max_sent_length防止实体超出句子范围

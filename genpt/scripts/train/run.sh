@@ -6,6 +6,7 @@ train_mode=$3 # baseline / data-aug / ours
 # model_name=t5-base
 model_name=${4-t5-base} # 第四个参数没有的话设置为t5-base
 
+# 训练5个epoch
 python3 code/run_prompt.py \
     --data_name ${dataset} \
     --data_dir ../../re-datasets/${dataset} \
@@ -21,9 +22,8 @@ python3 code/run_prompt.py \
     --warmup_steps 500 \
     --learning_rate 3e-5 \
     --learning_rate_for_new_token 1e-5 \
-    --num_train_epochs 10 \
+    --num_train_epochs 5 \
     --rel2id_dir ./data/${dataset}/rela2id.json \
     --max_grad_norm 2 \
     --train_mode ${train_mode} \
-    --train_name train-gpt2 \
-    --seed 0
+    --train_name train-gpt2

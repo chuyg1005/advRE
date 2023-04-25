@@ -1,6 +1,7 @@
-from arguments import get_args_parser
-import random
 import json
+import random
+
+from arguments import get_args_parser
 
 mapping = {"per": "person", "org": "organization"}
 
@@ -182,5 +183,5 @@ valid_conditions_re_tacred = {'org:founded_by': ['organization:person'],
                     'per:cities_of_residence': ['person:city', 'person:country', 'person:state_or_province', 'person:location'],
                     'per:city_of_birth': ['person:city', 'person:nationality', 'person:state_or_province', 'person:location']}
 
-valid_conditions_all = {"tacred": valid_conditions_tacred, "tacrev": valid_conditions_tacrev, "re-tacred": valid_conditions_re_tacred}
+valid_conditions_all = {"tacred": valid_conditions_tacred, "tacrev": valid_conditions_tacrev, "retacred": valid_conditions_re_tacred}
 

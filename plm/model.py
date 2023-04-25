@@ -137,6 +137,10 @@ class REModel(nn.Module):
 
         return sent_scores
 
+    @torch.no_grad()
+    def compute_scores(self, input_ids, attention_mask, ss, os, labels):
+        logits = self(input_ids, attention_mask, ss, os) # [batch_size, label_num]
+
     @autocast()
     def compute_loss(self, input_ids=None, attention_mask=None, labels=None, ss=None, se=None, os=None, oe=None, train_mode='baseline'):
         # 基础模型，直接返回
