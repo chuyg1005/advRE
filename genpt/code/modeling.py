@@ -105,7 +105,7 @@ class Model(torch.nn.Module):
 
         logits1, logits2 = selected_logits.chunk(2)
         aug = logits1 - logits2 # 越大说明entity-bias越严重
-        org = torch.zeros_like(aug)
+        org = torch.full_like(aug, aug.median().item())
         weights = torch.stack([org, aug], 0)
         # print(weights)
         # print(weights)
