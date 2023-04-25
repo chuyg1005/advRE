@@ -129,10 +129,10 @@ class TACREDDataset(Dataset):
         return len(self.data)    
 
 class RETACREDDataset(TACREDDataset):
-    def __init__(self, data_file, no_task_desc=False, use_pseudo=False, raw_labelset=None, mask_entity=False, mask_token=None):
+    def __init__(self, data_file, no_task_desc=False, raw_labelset=None, mask_entity=False, mask_token=None, mode='train'):
         # 定义自己的raw_labelset
         raw_labelset = ['no_relation', 'org:website', 'per:country_of_death', 'per:cause_of_death', 'per:children', 'per:origin', 'org:political/religious_affiliation', 'per:cities_of_residence', 'per:title', 'per:charges', 'per:religion', 'org:number_of_employees/members', 'per:city_of_death', 'per:city_of_birth', 'per:countries_of_residence', 'org:top_members/employees', 'org:city_of_branch', 'per:parents', 'per:employee_of', 'per:stateorprovince_of_birth', 'org:country_of_branch', 'org:dissolved', 'per:date_of_death', 'org:founded', 'per:age', 'per:country_of_birth', 'org:members', 'per:spouse', 'org:founded_by', 'per:date_of_birth', 'per:identity', 'per:stateorprovinces_of_residence', 'org:alternate_names', 'org:shareholders', 'org:member_of', 'per:schools_attended', 'org:stateorprovince_of_branch', 'per:other_family', 'per:siblings', 'per:stateorprovince_of_death']
-        super().__init__(data_file, no_task_desc, use_pseudo, raw_labelset, mask_entity, mask_token)
+        super().__init__(data_file, no_task_desc, raw_labelset, mask_entity, mask_token, mode)
         
 
 class UFETDataset(Dataset):
