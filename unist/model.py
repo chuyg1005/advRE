@@ -66,7 +66,7 @@ class UniSTModel(RobertaPreTrainedModel):
             loss = self.compute_loss(sent_embeddings, pos_embeddings, neg_embeddings, reduction='none')
             loss1, loss2 = loss.chunk(2)
             aug = loss2 - loss1
-            org = torch.full_like(aug, aug.quantile(.75).item())
+            org = torch.full_like(aug, aug.max().item())
             weights = torch.stack([org, aug], 0)
             weights = F.softmax(weights, 0).flatten()
             weights = weights.clone().detach()
