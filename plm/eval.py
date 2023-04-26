@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import numpy as np
 import torch
 # from constants import load_constants
-from evaluation import get_f1
+from evaluation import f1_score, get_f1
 from model import REModel
 from prepro import Processor
 from transformers import AutoTokenizer
@@ -36,7 +36,7 @@ def main(opt):
 
     # load model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = torch.load(os.path.join(opt['ckpt_dir'], f'best-{opt["model_name"]}.ckpt')).to(device)
+    model = torch.load(os.path.join(opt['ckpt_dir'], f'{opt["model_name"]}.ckpt')).to(device)
     model.eval()
 
     eval_results_file = os.path.join(opt['ckpt_dir'], 'eval_results.json')
@@ -49,6 +49,7 @@ def main(opt):
     # compute f1 score and print
     keys, preds = np.array(keys, dtype=np.int64), np.array(preds, dtype=np.int64)
     _, _, f1 = get_f1(keys, preds, no_relation)  # 计算f1，并保存结果
+    mi_f1, ma_f1 = f1_score(keys, preds, len(rela2id), no_relation)
 
 
     eval_results[opt['dataset']] = f1
@@ -69,6 +70,7 @@ def main(opt):
     #     json.dump(list(zip(key_relas, pred_relas)), f)
 
     print(f'{opt["dataset"]}: {f1 * 100:.2f}.')
+    print(f'mi_f1: {mi_f1 * 100:.2f}, ma_f1: {ma_f1 * 100:.2f}.')
 
 
 if __name__ == '__main__':
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_data_dir', type=str, required=True, help='eval data directory.')
     parser.add_argument('--all', action='store_true', help='全句mask还是只是在实体部分mask')
     parser.add_argument('--mask_rate', type=float, default=0., help='实体名称遮蔽比例')
-    parser.add_argument('--model_name',type=str, default='model', help='用来评价的模型名称')
+    parser.add_argument('--model_name',type=str, default='best-model', help='用来评价的模型名称')
     parser.add_argument('--save', action='store_true', help='保存模型预测结果')
     # parser.add_argument('--data_dir', type=str, required=True, help='dataset dirname.')  # TODO: encoded or not encoded
     # parser.add_argument('--dataset', type=str, required=True, help='dataset name(without .json suffix).')

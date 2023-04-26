@@ -224,7 +224,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.n_gpu = torch.cuda.device_count()
     args.device = device
-    if args.seed > 0:  # 固定随机数种子
+    if args.seed >= 0:  # 固定随机数种子
         set_seed(args)
 
     # config = AutoConfig.from_pretrained(
@@ -252,6 +252,8 @@ def main():
     train_file = os.path.join(args.data_dir, args.train_name + '.json')
     dev_file = os.path.join(args.data_dir, "dev.json")
     test_file = os.path.join(args.data_dir, "test.json")
+    unseen_file = os.path.join(args.data_dir, "splits/test_two_new_entity.json")
+    challenge_file = os.path.join(args.data_dir, "splits/test_two_old_entity_old_pair_new_rela.json")
     # dev_rev_file = os.path.join(args.data_dir, "dev_rev.json")
     # test_rev_file = os.path.join(args.data_dir, "test_rev.json")
 
@@ -265,6 +267,8 @@ def main():
     train_cache_path = os.path.join(data_cache_dir, args.train_name + '.json')
     dev_cache_path = os.path.join(data_cache_dir, 'dev.json')
     test_cache_path = os.path.join(data_cache_dir, 'test.json')
+    unseen_cache_path = os.path.join(data_cache_dir, "unseen.json")
+    challenge_cache_path = os.path.join(data_cache_dir, "challenge.json")
 
 
     def load_features(file_in, mode, cache_path):
@@ -280,6 +284,8 @@ def main():
     train_features = load_features(train_file, 'train', train_cache_path)
     dev_features = load_features(dev_file, 'dev', dev_cache_path)
     test_features = load_features(test_file, 'test', test_cache_path)
+    unseen_features = load_features(unseen_file, "test", unseen_cache_path)
+    challenge_features = load_features(challenge_file, "test", challenge_cache_path)
 
     # 保存tokenizer
     tokenizer_save_path = os.path.join(data_cache_dir, 'tokenizer')
@@ -301,6 +307,8 @@ def main():
     benchmarks = (
         ("dev", dev_features),
         ("test", test_features),
+        ("unseen", unseen_features),
+        ("challenge", challenge_features)
         # ("dev_rev", dev_rev_features),
         # ("test_rev", test_rev_features),
     )
