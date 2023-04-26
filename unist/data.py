@@ -120,9 +120,10 @@ class TACREDDataset(Dataset):
         else: # 使用伪数据，随机选择一个
             features = self.data[idx]
             feature1 = features[0]
+            neg = self.get_neg_label(feature1)
             rand_idx = np.random.randint(1, len(features))
             feature2 = features[rand_idx]
-            return [feature[:2] + [self.get_neg_label(feature)] + feature[2:] for feature in [feature1, feature2]]
+            return [feature[:2] + [neg] + feature[2:] for feature in [feature1, feature2]]
             # return [self.add_neg_label(self.data[idx][0]), self.add_neg_label(self.data[idx][1])]
     
     def __len__(self):

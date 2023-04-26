@@ -58,6 +58,20 @@ class UniSTModel(RobertaPreTrainedModel):
             
             loss = self.compute_loss(sent_embeddings, pos_embeddings, neg_embeddings)
             return loss 
+        elif train_mode == 'ours_new':
+            sent_embeddings = self.embed(sent_input_ids, sent_attention_mask)
+            pos_embeddings = self.embed(pos_input_ids, pos_attention_mask)
+            neg_embeddings = self.embed(neg_input_ids, neg_attention_mask)
+            
+            loss = self.compute_loss(sent_embeddings, pos_embeddings, neg_embeddings, reduction='none')
+            loss1, loss2 = loss.chunk(2)
+            aug = loss2 - loss1
+            org = torch.full_like(aug, aug.quantile(.75).item())
+            weights = torch.stack([org, aug], 0)
+            weights = F.softmax(weights, 0).flatten()
+            weights = weights.clone().detach()
+
+            return torch.dot(weights, loss) / sz
         
         elif train_mode == 'ours':
             # TODO: 实现我们的做法
