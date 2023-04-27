@@ -167,6 +167,8 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
                 if "retacred" in args.eval_tasks:
                     eval_tacred(args, eval_datasets["retacred_dev"], model_to_eval, tokenizer, num_epochs=epoch+1, split="dev")
                     eval_tacred(args, eval_datasets["retacred_test"], model_to_eval, tokenizer, num_epochs=epoch+1, split="test")
+                    eval_tacred(args, eval_datasets["retacred_unseen"], model_to_eval, tokenizer, num_epochs=epoch+1, split="unseen")
+                    eval_tacred(args, eval_datasets["retacred_challenge"], model_to_eval, tokenizer, num_epochs=epoch+1, split="challenge")
                 if "ufet" in args.eval_tasks:
                     threshold = eval_ufet(args, eval_datasets["ufet_dev"], model_to_eval, tokenizer, num_epochs=epoch+1, split="dev")["Threshold"]
                     eval_ufet(args, eval_datasets["ufet_test"], model_to_eval, tokenizer, num_epochs=epoch+1, split="test", threshold=threshold)
@@ -232,6 +234,7 @@ def eval_tacred(args, eval_dataset, model, tokenizer, num_epochs="", split=""):
         "Micro f1": f1
     }
 
+    print(split)
     print(results)
     
     for key in results:
@@ -699,7 +702,7 @@ def main():
             else None
         )
         tacred_challendge_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_old_entity_old_pair_new_rela.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
             if "tacred" in args.eval_tasks
             else None
         )
@@ -717,6 +720,16 @@ def main():
         )
         retacred_test_dataset = (
             RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            if "retacred" in args.eval_tasks
+            else None
+        )
+        retacred_unseen_dataset = (
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            if "retacred" in args.eval_tasks
+            else None
+        )
+        retacred_challenge_dataset = (
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
             if "retacred" in args.eval_tasks
             else None
         )
@@ -778,7 +791,9 @@ def main():
             "maven_dev": maven_dev_dataset,
             "fewrel_dev": fewrel_dev_dataset,
             "retacred_dev": retacred_dev_dataset,
-            "retacred_test": retacred_test_dataset
+            "retacred_test": retacred_test_dataset,
+            "retacred_unseen": retacred_unseen_dataset,
+            "retacred_challenge": retacred_challenge_dataset
         }
 
         #if args.local_rank == 0:

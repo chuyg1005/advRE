@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,6 +18,10 @@ class UniSTModel(RobertaPreTrainedModel):
         self.init_weights()
         self.config = config
         self.emb_grad = {}
+        self.m = 0.99
+        self.mean = 0.
+        self.var = 1.
+        self.eps = 1e-12
 
     def compute_loss(self, sent_embeddings, pos_embeddings, neg_embeddings, reduction='mean'):
         loss = F.triplet_margin_with_distance_loss(sent_embeddings, pos_embeddings, neg_embeddings, distance_function=self.dist_fn, margin=self.margin, reduction=reduction)
@@ -66,9 +71,13 @@ class UniSTModel(RobertaPreTrainedModel):
             loss = self.compute_loss(sent_embeddings, pos_embeddings, neg_embeddings, reduction='none')
             loss1, loss2 = loss.clone().detach().chunk(2)
             aug = loss2 - loss1
-            org = torch.full_like(aug, aug.median().item()) # median for tacred /  max for retacred
-            weights = torch.stack([org, aug], 0)
-            weights = F.softmax(weights, 0).flatten()
+            self.mean = self.m * self.mean + (1 - self.m) * aug.mean().item() # 进行滑动平均
+            self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
+            aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
+            aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+            org = torch.zeros_like(aug)
+            weights = torch.stack([org, aug], 0) # 拼接起来
+            weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
 
             return torch.dot(weights, loss) / sz
         
