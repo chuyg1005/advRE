@@ -224,8 +224,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.n_gpu = torch.cuda.device_count()
     args.device = device
-    if args.seed >= 0:  # 固定随机数种子
-        set_seed(args)
+    # if args.seed >= 0:  # 固定随机数种子
+    set_seed(args)
 
     # config = AutoConfig.from_pretrained(
     #     args.config_name if args.config_name else args.model_name_or_path,
@@ -252,8 +252,8 @@ def main():
     train_file = os.path.join(args.data_dir, args.train_name + '.json')
     dev_file = os.path.join(args.data_dir, "dev.json")
     test_file = os.path.join(args.data_dir, "test.json")
-    unseen_file = os.path.join(args.data_dir, "splits/test_two_new_entity.json")
-    challenge_file = os.path.join(args.data_dir, "splits/test_two_old_entity_old_pair_new_rela.json")
+    unseen_file = os.path.join(args.data_dir, "splits/test_two_new_entity.json") # 两个新实体下的表现
+    challenge_file = os.path.join(args.data_dir, "splits/test_challenge.json") # 挑战集
     # dev_rev_file = os.path.join(args.data_dir, "dev_rev.json")
     # test_rev_file = os.path.join(args.data_dir, "test_rev.json")
 

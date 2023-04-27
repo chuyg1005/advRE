@@ -14,6 +14,7 @@ def set_seed(args):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
     if args.n_gpu > 0 and torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
@@ -124,7 +125,7 @@ def collate_fn(batch, mode='train'):
 
 
 def predict(model, features, test_batch_size, device):
-    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, 'eval'), drop_last=False)
+    dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, 'eval'), drop_last=False, shuffle=False) # 评价模型
     keys, preds = [], []
     model.eval()
     for i_b, batch in enumerate(tqdm(dataloader)):

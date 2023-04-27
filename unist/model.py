@@ -64,12 +64,11 @@ class UniSTModel(RobertaPreTrainedModel):
             neg_embeddings = self.embed(neg_input_ids, neg_attention_mask)
             
             loss = self.compute_loss(sent_embeddings, pos_embeddings, neg_embeddings, reduction='none')
-            loss1, loss2 = loss.chunk(2)
+            loss1, loss2 = loss.clone().detach().chunk(2)
             aug = loss2 - loss1
-            org = torch.full_like(aug, aug.max().item())
+            org = torch.full_like(aug, aug.median().item()) # median for tacred /  max for retacred
             weights = torch.stack([org, aug], 0)
             weights = F.softmax(weights, 0).flatten()
-            weights = weights.clone().detach()
 
             return torch.dot(weights, loss) / sz
         

@@ -1,4 +1,5 @@
 import constants
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,6 +16,10 @@ class REModel(nn.Module):
         self.encoder.gradient_checkpointing_enable()  # 启用梯度检查点
         hidden_size = self.encoder.config.hidden_size
         self.emb_grad = {}
+        self.mean = 0.
+        self.var = 1.
+        self.m = 0.99 # 动量
+        self.eps = 1e-12 # 最小的一个量
         # entity_type_rela2id = load_constants(args.data_dir)[2]
         # self.entity_type_rela2id = {}
         # for k, v in entity_type_rela2id.items():
@@ -166,14 +171,26 @@ class REModel(nn.Module):
         loss = F.cross_entropy(logits, labels, reduction='none')
         # 相当于K.stop_gradient
         # loss1, loss2 = loss.clone().detach().chunk(2)
-        loss1, loss2 = loss.detach().chunk(2)
+        loss1, loss2 = loss.clone().detach().chunk(2)
         # loss1, loss2 = loss.chunk(2)
         aug = loss2 - loss1
+        self.mean = self.m * self.mean + (1 - self.m) * aug.mean().item() # 进行滑动平均
+        self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
         # org = torch.full_like(aug, aug.median().item())
         # org = torch.full_like(aug, aug.quantile(.75).item())
-        org = torch.full_like(aug, aug.max().item()) # 切换为max后，伪数据的权重就一定比原始数据的权重低了
-        weights = torch.stack([org, aug], 0)
-        weights = F.softmax(weights, 0).flatten()
+        # 切换为running-mean
+        # 将aug中小于mean的全部设置为0
+        aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
+        # org = torch.full_like(aug, self.mean) # 切换为max后，伪数据的权重就一定比原始数据的权重低了
+        # weights = torch.stack([org, aug], 0)
+        # weights = (weights - self.mean) / np.sqrt(self.var + self.eps) # 假定服从正态分布，归一化为标准正态分布
+        # # 将小于0的全部设置为1e-12
+        # weights = torch.where(weights < 0, torch.full_like(weights, -1e12), weights)
+        # mask = aug > 3  # 3sigma原则，大于这个的被视为对抗样本
+        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        org = torch.zeros_like(aug)
+        weights = torch.stack([org, aug], 0) # 拼接起来
+        weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
         # weights = weights.clone().detach()
 
         return torch.dot(weights, loss) / sz
@@ -231,5 +248,6 @@ class REModel(nn.Module):
     #         mask[i, rela_ids] = 0.
     #     logits = logits - mask
 
+    #     return logits
     #     return logits
     #     return logits

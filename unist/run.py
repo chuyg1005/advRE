@@ -162,6 +162,8 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
                 if "tacred" in args.eval_tasks:
                     eval_tacred(args, eval_datasets["tacred_dev"], model_to_eval, tokenizer, num_epochs=epoch+1, split="dev")
                     eval_tacred(args, eval_datasets["tacred_test"], model_to_eval, tokenizer, num_epochs=epoch+1, split="test")
+                    eval_tacred(args, eval_datasets["tacred_unseen"], model_to_eval, tokenizer, num_epochs=epoch+1, split="unseen")
+                    eval_tacred(args, eval_datasets["tacred_challenge"], model_to_eval, tokenizer, num_epochs=epoch+1, split="challenge")
                 if "retacred" in args.eval_tasks:
                     eval_tacred(args, eval_datasets["retacred_dev"], model_to_eval, tokenizer, num_epochs=epoch+1, split="dev")
                     eval_tacred(args, eval_datasets["retacred_test"], model_to_eval, tokenizer, num_epochs=epoch+1, split="test")
@@ -691,6 +693,16 @@ def main():
             if "tacred" in args.eval_tasks
             else None
         )
+        tacred_unseen_dataset = (
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            if "tacred" in args.eval_tasks
+            else None
+        )
+        tacred_challendge_dataset = (
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_old_entity_old_pair_new_rela.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            if "tacred" in args.eval_tasks
+            else None
+        )
         # retacred(TODO：加入retacred)
         retacred_train_dataset = (
             # 定义自己的raw_labelset
@@ -759,6 +771,8 @@ def main():
         eval_datasets = {
             "tacred_dev": tacred_dev_dataset,
             "tacred_test": tacred_test_dataset,
+            "tacred_unseen": tacred_unseen_dataset,
+            "tacred_challenge": tacred_challendge_dataset,
             "ufet_dev": ufet_dev_dataset,
             "ufet_test": ufet_test_dataset,
             "maven_dev": maven_dev_dataset,
