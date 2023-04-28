@@ -100,6 +100,28 @@ val_dataset = dadaset(
     mode="dev"
 ) if not args.eval_only else None
 
+unseen_dataset = dadaset(
+    path=args.data_dir + "/splits",
+    name='test_two_new_entity.json',
+    rel2id=args.rel2id_dir,
+    tokenizer=tokenizer,
+    pseudo_token=args.pseudo_token,
+    prompt_lens=args.prompt_lens,
+    mode="dev"
+) if not args.eval_only else None
+
+
+challenge_dataset = dadaset(
+    path=args.data_dir + "/splits",
+    name='test_challenge.json',
+    rel2id=args.rel2id_dir,
+    tokenizer=tokenizer,
+    pseudo_token=args.pseudo_token,
+    prompt_lens=args.prompt_lens,
+    mode="dev"
+) if not args.eval_only else None
+
+
 # 指向自定义划分之后的数据集路径
 test_dataset = dadaset(
     path=args.data_dir+"/splits",
@@ -138,6 +160,11 @@ if not args.eval_only:
 
     val_sampler = SequentialSampler(val_dataset)
     val_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=val_batch_size)
+
+    unseen_sampler = SequentialSampler(unseen_dataset)
+    unseen_dataloader = DataLoader(unseen_dataset, sampler=unseen_sampler, batch_size=val_batch_size)
+    challenge_sampler = SequentialSampler(challenge_dataset)
+    challenge_datalaoder = DataLoader(challenge_dataset, sampler=challenge_sampler, batch_size=val_batch_size)
 
 test_sampler = SequentialSampler(test_dataset)
 test_dataloader = DataLoader(test_dataset, sampler=test_sampler, batch_size=val_batch_size)
@@ -206,8 +233,12 @@ if not args.eval_only:
                 sys.stdout.flush()
 
         mi_f1, ma_f1 = evaluate(model, val_dataset, val_dataloader)
+        chall_mi_f1, chall_ma_f1 = evaluate(model, challenge_dataset, challenge_datalaoder)
+        un_mi_f1, un_ma_f1 = evaluate(model, unseen_dataset, unseen_dataloader)
 
-        print("***** Epoch {} *****: mi_f1 {}, ma_f1 {}".format(epoch, mi_f1, ma_f1))
+        print("***** Epoch {} Validate *****: mi_f1 {}, ma_f1 {}".format(epoch, mi_f1, ma_f1))
+        print("***** Epoch {} Challenge *****: mi_f1 {}, ma_f1 {}".format(epoch, chall_mi_f1, chall_ma_f1))
+        print("***** Epoch {} Unseen *****: mi_f1 {}, ma_f1 {}".format(epoch, un_mi_f1, un_ma_f1))
         hist_mi_f1.append(mi_f1)
         hist_ma_f1.append(ma_f1)
         if mi_f1 > mx_res: # 保存最高的micro_f1_score的

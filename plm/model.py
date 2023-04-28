@@ -176,21 +176,21 @@ class REModel(nn.Module):
         aug = loss2 - loss1
         self.mean = self.m * self.mean + (1 - self.m) * aug.mean().item() # 进行滑动平均
         self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
+        aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
+        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        org = torch.zeros_like(aug)
+        weights = torch.stack([org, aug], 0) # 拼接起来
+        weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
         # org = torch.full_like(aug, aug.median().item())
         # org = torch.full_like(aug, aug.quantile(.75).item())
         # 切换为running-mean
         # 将aug中小于mean的全部设置为0
-        aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
         # org = torch.full_like(aug, self.mean) # 切换为max后，伪数据的权重就一定比原始数据的权重低了
         # weights = torch.stack([org, aug], 0)
         # weights = (weights - self.mean) / np.sqrt(self.var + self.eps) # 假定服从正态分布，归一化为标准正态分布
         # # 将小于0的全部设置为1e-12
         # weights = torch.where(weights < 0, torch.full_like(weights, -1e12), weights)
         # mask = aug > 3  # 3sigma原则，大于这个的被视为对抗样本
-        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
-        org = torch.zeros_like(aug)
-        weights = torch.stack([org, aug], 0) # 拼接起来
-        weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
         # weights = weights.clone().detach()
 
         return torch.dot(weights, loss) / sz

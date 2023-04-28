@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,6 +52,11 @@ class Model(torch.nn.Module):
 
         self.emb_grad = {}
 
+        self.mean = 0.
+        self.var = 1.
+        self.m = 0.99
+        self.eps = 1e-12
+
 
     def embed_input(self, queries):
         bz = queries.shape[0]
@@ -97,12 +103,15 @@ class Model(torch.nn.Module):
         sz = input_ids.size(0) // 2
         loss, logits = self.compute_loss(input_ids, attention_mask, target_ids, target_mask, target_labels, reduction='none')
 
-        loss1, loss2 = loss.chunk(2)
+        loss1, loss2 = loss.clone().detach().chunk(2)
         aug = loss2 - loss1 # 越大说明entity-bias越严重
-        org = torch.full_like(aug, aug.max().item())
-        weights = torch.stack([org, aug], 0)
-        weights = F.softmax(weights, 0).flatten()
-        weights = weights.clone().detach()
+        self.mean = self.m * self.mean + (1 - self.m) * aug.mean().item() # 进行滑动平均
+        self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
+        aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
+        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        org = torch.zeros_like(aug)
+        weights = torch.stack([org, aug], 0) # 拼接起来
+        weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
 
         return torch.dot(weights, loss) / sz, logits
 
