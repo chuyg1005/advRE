@@ -23,8 +23,9 @@ if __name__ == '__main__':
         assert ent_pred[0] == cont_pred[0]
         if ent_pred[0] != ent_pred[1] and cont_pred[0] == cont_pred[1]: # 依赖实体名称无法预测正确，但是依赖上下文可以预测正确
             print(ent_pred[0], ent_pred[1])
+            org_data[i]['test_idx'] = i # 反向索引，genpt模型需要用到
             filtered_data.append(org_data[i]) # 加入到挑战集
 
     print(f'剩余数量：{len(filtered_data)} / {len(org_data)}.') # 打印数据条数
-    # with open(os.path.join(data_dir, args.dataset, 'splits', args.split+'_challenge.json'), 'w') as f:
-    #     json.dump(filtered_data, f)
+    with open(os.path.join(data_dir, args.dataset, 'splits', args.split+'_challenge.json'), 'w') as f:
+        json.dump(filtered_data, f)

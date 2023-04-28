@@ -154,6 +154,7 @@ def collate_fn(batch, mode='train'):
 
     return batch
 
+# 训练模型的时候需要使用
 if not args.eval_only:
     train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size, collate_fn=collate_fn)
@@ -166,6 +167,7 @@ if not args.eval_only:
     challenge_sampler = SequentialSampler(challenge_dataset)
     challenge_datalaoder = DataLoader(challenge_dataset, sampler=challenge_sampler, batch_size=val_batch_size)
 
+# 测试模型
 test_sampler = SequentialSampler(test_dataset)
 test_dataloader = DataLoader(test_dataset, sampler=test_sampler, batch_size=val_batch_size)
 
@@ -182,12 +184,16 @@ if not args.eval_only:
     path = args.output_dir + "/"
     os.makedirs(path, exist_ok=True)
 
+if data_name == 'tacrev':
+    data_name = 'tacred' # tacrev直接使用在tacred数据集上训练得到的模型
+
 if args.k != 0 and args.data_seed != 0:
     checkpoint_prefix = '-'.join([str(model_type), str(data_name), str(args.k), str(args.data_seed)])
 else:
     checkpoint_prefix = '-'.join([str(model_type), str(data_name)])
 print(sys.argv)
 
+# 训练模型
 if not args.eval_only:
     start_train_time = time.time()
     for epoch in trange(int(args.num_train_epochs), desc="Epoch"):
@@ -264,6 +270,7 @@ if not args.eval_only:
 # print("train time cost", end_train_time - start_train_time)
 # print("test time cost", end_test_time - start_test_time)
 
+# 加载模型
 print("***** {} Test on best model *****".format(checkpoint_prefix))
 model.load_state_dict(torch.load(args.output_dir + "/" + '{}-best_parameter'.format(checkpoint_prefix) + ".pkl"))
 start_test_time = time.time()

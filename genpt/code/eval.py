@@ -1,7 +1,10 @@
-import os
+"""需要提前保存好预测的结果，然后再计算"""
 import json
+import os
 from argparse import ArgumentParser
+
 from utils import f1_score
+
 
 def load_data(path):
     return json.load(open(path))
@@ -20,7 +23,7 @@ if __name__ == '__main__':
     rela2id = load_data(args.rela2id_path)
 
     # print('load data success.')
-    indices = list(map(lambda item: item['test_idx'], eval_data))
+    indices = list(map(lambda item: item['test_idx'], eval_data)) # 反向索引
     result = [eval_result[idx] for idx in indices]
 
     pred = [pair[0] for pair in result]
