@@ -238,6 +238,7 @@ class RobertaModel(Model):
 
     @torch.no_grad()
     def greedy_decode(self, input_ids, attention_mask, ent_type_ids, ent_type_mask, type_pairs_index=None, labels=None):
+        # 采用argmax解码，结果是[batch_sz, max_len, vacab_size]
         self.model.eval()
         batch_size = input_ids.size()[0]
         src_input_ids = input_ids[:, :self.max_seq_length]

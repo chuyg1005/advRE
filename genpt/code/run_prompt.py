@@ -31,7 +31,7 @@ def evaluate(model, val_dataset, val_dataloader, save_path=None):
             type_pairs = batch[-2]
             logits = model.greedy_decode(*batch)
             res = []
-            for bs in range(len(labels)):
+            for bs in range(len(labels)): # 处理第bs个样本
                 res_b = torch.zeros(len(val_dataset.prompt_id_2_label))
                 logit = logits[bs]  # (max_len, vocab_size)
                 for idx, i in enumerate(val_dataset.prompt_id_2_label):
@@ -42,7 +42,7 @@ def evaluate(model, val_dataset, val_dataloader, save_path=None):
                     _res = _res / (len(i))
                     _res = _res.detach().cpu()
                     res_b[idx] = _res
-                res_b = res_b * val_dataset.type_mapping[type_pairs[bs].item()]
+                res_b = res_b * val_dataset.type_mapping[type_pairs[bs].item()] # 解码的时候会用到type_mapping的方式进行解码，0的直接盖住了
                 res.append(res_b)
             logits = torch.stack(res, 0)  # (bs, max_rel)
 

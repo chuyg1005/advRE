@@ -54,25 +54,26 @@ class REPromptDataset(Dataset):
     def type_valid_conditions(self):
         type_pairs = []
         for type_pair in self.valid_conditions.values():
-            type_pairs += type_pair
-        type_pairs = list(set(type_pairs))
+            type_pairs += type_pair # 找出所有的type_pair
+        type_pairs = list(set(type_pairs)) # 去重
         type_mapping = {}
         type_mapping_tmp = {}
         for id, type_pair in enumerate(type_pairs):
-            type_mapping[id] = [0 for _ in range(len(self.rel2id))]
+            type_mapping[id] = [0 for _ in range(len(self.rel2id))] # key为实体类型对，值为这个关系类型是否出现过 # key为实体类型对，值为这个关系类型是否出现过
             type_mapping_tmp[type_pair] = [0 for _ in range(len(self.rel2id))]
+            # 关系，实体类型对
             for rel, rel_types in self.valid_conditions.items():
                 for rel_type in rel_types:
                     if rel_type == type_pair:
                         type_mapping[id][self.rel2id[rel]] = 1
                         type_mapping_tmp[type_pair][self.rel2id[rel]] = 1
 
-            type_mapping[id] += [type_mapping[id][-1]]
+            type_mapping[id] += [type_mapping[id][-1]] # na对应的有两个
 
         self.type_mapping = type_mapping
         self.type_pairs = [t.lower() for t in type_pairs]
         for key, value in self.type_mapping.items():
-            self.type_mapping[key] = torch.tensor(np.array(value)).long()
+            self.type_mapping[key] = torch.tensor(np.array(value)).long() #*转换为tensor类型（key是实体类型对，value是对应的关系类型的一个bitmap（合法的关系就是1，不合法的就是0）
 
     def tokenize(self, item, tokenizer):
 
@@ -261,11 +262,11 @@ class TACRE_Dataset_t5(REPromptDataset):
                 assert self.rel2id[name] == len(self.rel2id) - 1
                 labels[0] = 'person'
                 labels_encode = tokenizer.encode(" ".join(labels + [self.extra_id_list[3]]), add_special_tokens=True)
-                self.prompt_id_2_label[self.rel2id[name]] = labels_encode
+                self.prompt_id_2_label[self.rel2id[name]] = labels_encode # no-relation换成person: no-relation?
 
                 labels[0] = 'organization'
                 labels_encode = tokenizer.encode(" ".join(labels + [self.extra_id_list[3]]), add_special_tokens=True)
-                self.prompt_id_2_label[self.rel2id[name]+1] = labels_encode
+                self.prompt_id_2_label[self.rel2id[name]+1] = labels_encode # 额外加一个organization no-relation?
     def __getitem__(self, index):
         item = self.data[index]
         # 训练模式下有多条数据，非训练模式下只有一条数据

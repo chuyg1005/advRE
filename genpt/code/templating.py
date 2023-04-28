@@ -20,6 +20,7 @@ def get_temps_re_wiki80():
 
 
 def get_temps_re():
+    # 生成关系类型的模版
     args = get_args_parser()
     temps = {}
     with open(args.rel2id_dir, "r") as f:
@@ -27,7 +28,7 @@ def get_temps_re():
 
     for name, id in rel2id.items():
         labels = name.split(':')
-        if len(labels) == 2:
+        if len(labels) == 2: # 普通的关系类型
             if labels[0] in mapping.keys():
                 label0 = mapping[labels[0]]
             else:
@@ -43,12 +44,12 @@ def get_temps_re():
                     label1_ += l_list
                 else:
                     label1_ += [l]
-        elif labels == ["NA"] or ["no_relation"]:
+        elif labels == ["NA"] or ["no_relation"]: # na关系类型
             label0 = "entity"
             label1_ = ["no", "relation",]
 
         labels_tokens = [label0] + label1_
-        temps[name] = labels_tokens
+        temps[name] = labels_tokens # 关系名称：模版
 
     return temps
 
@@ -142,6 +143,7 @@ valid_conditions_tacrev = {'org:founded_by': ['organization:person'],
                     'per:country_of_death': ['person:location', 'person:nationality', 'person:country']}
 
 # for RE-TACRED
+# 左边是关系，右边是类型pair（就是通过类型筛选出合理的关系）
 valid_conditions_re_tacred = {'org:founded_by': ['organization:person'],
                     'no_relation': ['organization:state_or_province', 'organization:date', 'organization:organization', 'person:state_or_province', 'organization:religion', 'person:title', 'person:cause_of_death', 'organization:ideology', 'person:date', 'organization:city', 'person:duration', 'person:organization', 'organization:location', 'person:city', 'organization:person', 'person:nationality', 'person:person', 'person:criminal_charge', 'person:country', 'organization:number', 'organization:url', 'person:number', 'organization:country', 'person:religion', 'person:location'],
                     'per:identity': ['person:person'],
