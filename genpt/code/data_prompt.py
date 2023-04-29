@@ -345,8 +345,19 @@ class TACRE_Dataset_t5(REPromptDataset):
 
         # mask_entity进行测试
         if self.mask_entity:
-            sentence[ss:se+1] = ['<extra_id_4>'] * (se + 1 - ss)
-            sentence[os:oe+1] = ['<extra_id_4>'] * (oe + 1 - os)
+            # <extra_id_4>表示subj, <extra_id_5>表示obj
+            subj = '<extra_id_4>'
+            obj = '<extra_id_5>'
+            if ss < os: # subj在obj之前
+                sentence = sentence[:ss] + [subj] + sentence[se+1:os] + [obj] + sentence[oe+1:]
+                ss = se = sentence.index(subj)
+                os = oe = sentence.index(obj)
+            elif os < ss: # obj在subj之前
+                sentence = sentence[:os] + [obj] + sentence[oe+1:ss] + [subj] + sentence[se+1:]
+                ss = se = sentence.index(subj)
+                os = oe = sentence.index(obj)
+            # sentence[ss:se+1] = ['<extra_id_4>'] * (se + 1 - ss)
+            # sentence[os:oe+1] = ['<extra_id_5>'] * (oe + 1 - os)
 
         e1, e2 = sentence[ss: se + 1], sentence[os: oe + 1]
 

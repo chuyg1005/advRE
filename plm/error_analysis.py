@@ -97,8 +97,8 @@ def main(opt):
                     _, logit_e_topk = logit_e.topk(keep ,dim=1)
                     _, logit_c_topk= logit_c.topk(keep, dim=1)
 
-                    ent_hit = torch.any(pred == logit_e_topk, dim=1).sum()
-                    cont_hit = torch.any(pred == logit_c_topk, dim=1).sum()
+                    ent_hit = torch.any(pred == logit_e_topk, dim=1).sum().item()
+                    cont_hit = torch.any(pred == logit_c_topk, dim=1).sum().item()
 
                     ent_hits[keep-1] += ent_hit
                     cont_hits[keep-1] += cont_hit

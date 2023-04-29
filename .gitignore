@@ -2,6 +2,8 @@ RE_improved_baseline/
 plm/data/
 # plm/saved_models
 plm/RE_baseline/
+plm/results*.json
+*.ipynb
 __pycache__
 
 unist/data/
