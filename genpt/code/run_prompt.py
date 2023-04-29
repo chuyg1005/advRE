@@ -213,7 +213,7 @@ if not args.eval_only:
                 "target_ids": batch[3].cuda(),
                 "target_mask": batch[4].cuda(),
                 "labels": batch[5].cuda(),
-                "ent_pos": batch[6].cuda()
+                # "ent_pos": batch[6].cuda() # 不提供ent_pos（因为our_new不需要了）
             }
             loss, _ = model(**inputs) # logits并没有使用到，
             # print(f"loss: {loss.item()}.")

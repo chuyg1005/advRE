@@ -4,7 +4,8 @@ export CUDA_VISIBLE_DEVICES=$1
 dataset=$2
 train_mode=$3 # baseline / data-aug / ours
 # model_name=t5-base
-model_name=${4-t5-base} # 第四个参数没有的话设置为t5-base
+# model_name=${4-t5-base} # 第四个参数没有的话设置为t5-base
+model_name=${4-t5-base} # 使用bart
 
 # 训练5个epoch
 python3 code/run_prompt.py \

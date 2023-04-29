@@ -346,8 +346,10 @@ class TACRE_Dataset_t5(REPromptDataset):
         # mask_entity进行测试
         if self.mask_entity:
             # <extra_id_4>表示subj, <extra_id_5>表示obj
-            subj = '<extra_id_4>'
-            obj = '<extra_id_5>'
+            # subj = '<extra_id_4>'
+            subj = 'subject'
+            obj = 'object'
+            # obj = '<extra_id_5>'
             if ss < os: # subj在obj之前
                 sentence = sentence[:ss] + [subj] + sentence[se+1:os] + [obj] + sentence[oe+1:]
                 ss = se = sentence.index(subj)

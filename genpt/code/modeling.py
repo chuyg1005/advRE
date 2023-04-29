@@ -273,7 +273,7 @@ class RobertaModel(Model):
 
 def get_model(tokenizer):
     args = get_args()
-    if args.model_type != 'roberta':
+    if args.model_type != 'roberta': # bart / t5
         model = Model(args, tokenizer)
     else:
         model = RobertaModel(args, tokenizer)
