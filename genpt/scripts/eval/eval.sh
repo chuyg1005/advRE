@@ -1,15 +1,47 @@
-# for split in 'test' 'test_two_new_entity' 'test_one_new_entity' 'test_new_subj_entity' 'test_new_obj_entity' 'test_two_old_entity' 'test_two_old_entity_new_pair' 'test_two_old_entity_old_pair' 'test_two_old_entity_old_pair_new_rela' 'test_two_old_entity_old_pair_old_rela'; do
-#     python code/eval.py \
-#         --data_dir  ../../re-datasets/tacred \
-#         --eval_result_path ./results/tacred_ours/test.json \
-#         --rela2id_path ./data/tacred/rela2id.json \
-#         --split ${split}
-# done
+# bash eval.sh 0 tacred baseline test
+# bash eval.sh 0 tacred baseline test_rev
+# bash eval.sh 0 retacred baseline test
+export CUDA_VISIBLE_DEVICES=$1
+model_name=t5-base-$3
+dataset=$2
+split=$4
+data_name=$dataset
+# 如果split是test_rev，则切换data_name为tacrev
+if [ $split = 'test_rev' ]; then
+    data_name=tacrev
+fi
 
-for split in 'test_rev' 'test_rev_two_new_entity' 'test_rev_one_new_entity' 'test_rev_new_subj_entity' 'test_rev_new_obj_entity' 'test_rev_two_old_entity' 'test_rev_two_old_entity_new_pair' 'test_rev_two_old_entity_old_pair' 'test_rev_two_old_entity_old_pair_new_rela' 'test_rev_two_old_entity_old_pair_old_rela'; do
-    python code/eval.py \
-        --data_dir  ../../re-datasets/tacred \
-        --eval_result_path ./results/tacred_ablation/test_rev.json \
-        --rela2id_path ./data/tacred/rela2id.json \
-        --split ${split}
-done
+# 不mask entity name
+python code/run_prompt.py \
+    --data_name ${data_name} \
+    --data_dir ../../re-datasets/${dataset} \
+    --output_dir ./results/${dataset}/${model_name} \
+    --model_type T5 \
+    --model_name_or_path t5-base \
+    --per_gpu_eval_batch_size 32 \
+    --max_seq_length 512 \
+    --max_ent_type_length 7 \
+    --max_label_length 9 \
+    --learning_rate 3e-5 \
+    --learning_rate_for_new_token 1e-5 \
+    --rel2id_dir ./data/${dataset}/rela2id.json \
+    --eval_only \
+    --eval_name ${split}
+
+# mask住entity name
+python code/run_prompt.py \
+    --data_name ${data_name} \
+    --data_dir ../../re-datasets/${dataset} \
+    --output_dir ./results/${dataset}/${model_name} \
+    --model_type T5 \
+    --model_name_or_path t5-base \
+    --per_gpu_eval_batch_size 32 \
+    --max_seq_length 512 \
+    --max_ent_type_length 7 \
+    --max_label_length 9 \
+    --learning_rate 3e-5 \
+    --learning_rate_for_new_token 1e-5 \
+    --rel2id_dir ./data/${dataset}/rela2id.json \
+    --eval_only \
+    --eval_name ${split} \
+    --mask_entity
