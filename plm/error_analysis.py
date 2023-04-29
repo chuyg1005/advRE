@@ -39,12 +39,12 @@ def main(opt):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = torch.load(os.path.join(opt['ckpt_dir'], f'{opt["model_name"]}.ckpt')).to(device)
     model.eval()
+    # keep = opt['hit']
 
     # rela_id = opt['rela_id']
-    def analysis(rela_id):
+    def analysis(rela_id, max_hit):
         rela = id2rela[rela_id]
-        keep = opt['hit']
-        print(f'analysis for relation: {rela}. hit@{keep}.')
+        print(f'analysis for relation: {rela}. hit@{max_hit}.')
 
         # 准备数据
         features = []
@@ -76,8 +76,8 @@ def main(opt):
         batch_size = 64
         dataloader = DataLoader(features, batch_size=batch_size * 3, collate_fn=lambda batch: collate_fn(batch, 'eval'), drop_last=False, shuffle=False) # 评价模型
         # keys, preds = [], []
-        ent_hits = 0.
-        cont_hits = 0.
+        ent_hits = [0] * max_hit
+        cont_hits = [0] * max_hit
         # 计算mrr指标
         for i_b, batch in enumerate(tqdm(dataloader)):
 
@@ -93,14 +93,15 @@ def main(opt):
                 logit_c = logits[2::3] # 只使用上下文的预测结果
 
                 pred = torch.argmax(logit, dim=1).unsqueeze(-1) # [batch_size, 1]
-                _, logit_e_topk = logit_e.topk(keep ,dim=1)
-                _, logit_c_topk= logit_c.topk(keep, dim=1)
+                for keep in range(1, max_hit+1):
+                    _, logit_e_topk = logit_e.topk(keep ,dim=1)
+                    _, logit_c_topk= logit_c.topk(keep, dim=1)
 
-                ent_hit = torch.any(pred == logit_e_topk, dim=1).sum()
-                cont_hit = torch.any(pred == logit_c_topk, dim=1).sum()
+                    ent_hit = torch.any(pred == logit_e_topk, dim=1).sum()
+                    cont_hit = torch.any(pred == logit_c_topk, dim=1).sum()
 
-                ent_hits += ent_hit
-                cont_hits += cont_hit
+                    ent_hits[keep-1] += ent_hit
+                    cont_hits[keep-1] += cont_hit
                 # logit1, logit2 = logit.chunk(2) # logit1为原始的预测值，logit2为新的预测值
                 # pred_org = torch.argmax(logit1, dim=-1)
                 # rank = logit2.argsort(dim=1, descending=True) # 最大的是0
@@ -113,9 +114,17 @@ def main(opt):
         return total, ent_hits, cont_hits
         # print(f'ent_hit@{keep}: {ent_hits / total}; cont_hit@{keep}: {cont_hits / total}.')
 
+    results = []
+    max_hit = 5
+    # for hit in range(1, 5):
+    #     result = []
     for rela_id in id2rela:
-        total, ent_hits, cont_hits = analysis(rela_id)
+        total, ent_hits, cont_hits = analysis(rela_id, max_hit)
         print(f'total: {total}, ent_hits: {ent_hits}, cont_hits: {cont_hits}.')
+        results.append([id2rela[rela_id], total, ent_hits, cont_hits])
+
+    with open('results1.json', 'w') as f:
+        json.dump(results, f)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -131,7 +140,7 @@ if __name__ == '__main__':
     # parser.add_argument('--mask_rate', type=float, default=0., help='实体名称遮蔽比例')
     parser.add_argument('--model_name',type=str, default='best-model', help='用来评价的模型名称')
     # parser.add_argument('--rela_id', type=int, default=0)
-    parser.add_argument('--hit', type=int, default=1)
+    # parser.add_argument('--hit', type=int, default=1)
     # parser.add_argument('--save', action='store_true', help='保存模型预测结果')
     # parser.add_argument('--data_dir', type=str, required=True, help='dataset dirname.')  # TODO: encoded or not encoded
     # parser.add_argument('--dataset', type=str, required=True, help='dataset name(without .json suffix).')
