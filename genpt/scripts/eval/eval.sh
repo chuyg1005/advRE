@@ -12,21 +12,21 @@ if [ $split = 'test_rev' ]; then
 fi
 
 # 不mask entity name
-python code/run_prompt.py \
-    --data_name ${data_name} \
-    --data_dir ../../re-datasets/${dataset} \
-    --output_dir ./results/${dataset}/${model_name} \
-    --model_type T5 \
-    --model_name_or_path t5-base \
-    --per_gpu_eval_batch_size 32 \
-    --max_seq_length 512 \
-    --max_ent_type_length 7 \
-    --max_label_length 9 \
-    --learning_rate 3e-5 \
-    --learning_rate_for_new_token 1e-5 \
-    --rel2id_dir ./data/${dataset}/rela2id.json \
-    --eval_only \
-    --eval_name ${split}
+# python code/run_prompt.py \
+#     --data_name ${data_name} \
+#     --data_dir ../../re-datasets/${dataset} \
+#     --output_dir ./results/${dataset}/${model_name} \
+#     --model_type T5 \
+#     --model_name_or_path t5-base \
+#     --per_gpu_eval_batch_size 32 \
+#     --max_seq_length 512 \
+#     --max_ent_type_length 7 \
+#     --max_label_length 9 \
+#     --learning_rate 3e-5 \
+#     --learning_rate_for_new_token 1e-5 \
+#     --rel2id_dir ./data/${dataset}/rela2id.json \
+#     --eval_only \
+#     --eval_name ${split}
 
 # mask住entity name
 python code/run_prompt.py \
