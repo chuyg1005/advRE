@@ -345,8 +345,8 @@ class TACRE_Dataset_t5(REPromptDataset):
 
         # mask_entity进行测试
         if self.mask_entity:
-            sentence[ss:se+1] = [self.tokenizer.unk_token] * (se + 1 - ss)
-            sentence[os:oe+1] = [self.tokenizer.unk_token] * (oe + 1 - os)
+            sentence[ss:se+1] = ['<extra_id_4>'] * (se + 1 - ss)
+            sentence[os:oe+1] = ['<extra_id_4>'] * (oe + 1 - os)
 
         e1, e2 = sentence[ss: se + 1], sentence[os: oe + 1]
 
