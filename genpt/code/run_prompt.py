@@ -24,7 +24,8 @@ def evaluate(model, val_dataset, val_dataloader, save_path=None):
     all_labels = []
     NA_NUM = val_dataset.NA_NUM
     with torch.no_grad():
-        for batch in tqdm(val_dataloader):
+        for i, batch in tqdm(enumerate(val_dataloader)):
+            # if i > 100: break # 使用10个batch进行测试
             labels = batch[-1].numpy().tolist()
             # 长度为6，6个元素
             batch = [item.cuda() for item in batch]
@@ -282,4 +283,5 @@ else:
     mi_f1, ma_f1 = evaluate(model, test_dataset, test_dataloader)
 end_test_time = time.time()
 print("mi_f1 {}, ma_f1 {}".format(mi_f1, ma_f1))
+print("test time cost", end_test_time - start_test_time)
 print("test time cost", end_test_time - start_test_time)

@@ -290,8 +290,8 @@ def get_tokenizer(special=[]):
     tokenizer = model_config['tokenizer'].from_pretrained(
         args.model_name_or_path,
         do_basic_tokenize=False,
-        # cache_dir=args.cache_dir if args.cache_dir else None, use_fast=False)
-        cache_dir=args.cache_dir if args.cache_dir else None, use_fast=True) # 使用fast-tokenizer
+        cache_dir=args.cache_dir if args.cache_dir else None, use_fast=False)
+        # cache_dir=args.cache_dir if args.cache_dir else None) # 使用fast-tokenizer
     # tokenizer.add_tokens(special)
     tokenizer.add_special_tokens({'additional_special_tokens': special})
     return tokenizer

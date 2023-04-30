@@ -5,14 +5,15 @@ dataset=$2
 train_mode=$3 # baseline / data-aug / ours
 # model_name=t5-base
 # model_name=${4-t5-base} # 第四个参数没有的话设置为t5-base
-model_name=${4-t5-base} # 使用bart
+# model_name=${4-t5-base} # 使用bart
+model_name=facebook/bart-base
 
 # 训练5个epoch
 python3 code/run_prompt.py \
     --data_name ${dataset} \
     --data_dir ../../re-datasets/${dataset} \
-    --output_dir ./results/${dataset}/${model_name}-${train_mode} \
-    --model_type T5 \
+    --output_dir ./results/${dataset}/bart-base-${train_mode} \
+    --model_type Bart \
     --model_name_or_path ${model_name} \
     --per_gpu_train_batch_size 4 \
     --per_gpu_eval_batch_size 32 \

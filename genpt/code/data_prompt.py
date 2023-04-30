@@ -109,12 +109,13 @@ class REPromptDataset(Dataset):
 class TACRE_Dataset_bart(REPromptDataset):
 
     def __init__(self, path=None, name=None, rel2id=None, tokenizer=None, pseudo_token=None, prompt_lens=None,
-                 mode="train"):
+                 mode="train", mask_entity=False):
 
         super().__init__(path, name, rel2id, tokenizer, pseudo_token, prompt_lens, mode)
 
         self.valid_conditions = valid_conditions_all[self.data_name]
         self.type_valid_conditions()
+        self.mask_entity = mask_entity
         if not 'NA' in self.rel2id:
             self.NA_NUM = self.rel2id['no_relation']
         else:
@@ -145,10 +146,19 @@ class TACRE_Dataset_bart(REPromptDataset):
                 self.prompt_id_2_label[self.rel2id[name]+1] = labels_encode[1:]
 
     def __getitem__(self, index):
+        item = self.data[index]
+        # 训练模式下有多条数据，非训练模式下只有一条数据
+        if self.mode != 'train':
+            return self.get_feature(item)
+        else:
+            sample1 = item[0]
+            rand_idx = np.random.randint(1, len(item)) # 随机选择一个样本
+            sample2 = item[rand_idx]
+            # sample1 / sample2
+            return [self.get_feature(sample1), self.get_feature(sample2)]
 
-        i = self.data[index]
-
-        input_ids, target_ids, ent_type_ids, type_pairs_index = self.tokenize(i, self.tokenizer)
+    def get_feature(self, item):
+        input_ids, target_ids, ent_type_ids, type_pairs_index = self.tokenize(item, self.tokenizer)
         attention_mask = [1] * len(input_ids)
         padding_length = self.args.max_seq_length - len(input_ids)
         if padding_length > 0:
@@ -157,7 +167,7 @@ class TACRE_Dataset_bart(REPromptDataset):
 
         assert len(input_ids) == self.args.max_seq_length
         assert len(attention_mask) == self.args.max_seq_length
-        label = i['relation']
+        label = item['relation']
         label_id = self.rel2id[label]
         labels = torch.tensor(np.array(label_id)).long()
 
@@ -347,8 +357,8 @@ class TACRE_Dataset_t5(REPromptDataset):
         if self.mask_entity:
             # <extra_id_4>表示subj, <extra_id_5>表示obj
             # subj = '<extra_id_4>'
-            subj = 'subject'
-            obj = 'object'
+            subj = '<extra_id_76>'
+            obj = '<extra_id_58>'
             # obj = '<extra_id_5>'
             if ss < os: # subj在obj之前
                 sentence = sentence[:ss] + [subj] + sentence[se+1:os] + [obj] + sentence[oe+1:]
