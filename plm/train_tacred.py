@@ -225,7 +225,7 @@ def main():
     args.n_gpu = torch.cuda.device_count()
     args.device = device
     # if args.seed >= 0:  # 固定随机数种子
-    set_seed(args)
+    set_seed(args.seed)
 
     # config = AutoConfig.from_pretrained(
     #     args.config_name if args.config_name else args.model_name_or_path,

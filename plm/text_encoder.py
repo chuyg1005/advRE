@@ -562,10 +562,13 @@ class TypedEntityMarkerPunctNewTextEncoder(TypedEntityMarkerPunctTextEncoder):
             obj_masks = np.random.choice(obj_len, int(obj_len * mask_rate), replace=False)
 
             for idx in subj_masks:
-                tokens[ss+idx] = mask_token
+                # tokens[ss+idx] = mask_token
+                tokens[ss+idx] = '<subj>'
 
             for idx in obj_masks:
-                tokens[os+idx] = mask_token
+ #               tokens[os+idx] = mask_token
+                tokens[os+idx] = '<obj>'
+
         else:
             n = subj_len + obj_len
             mask_num = int(n * mask_rate)

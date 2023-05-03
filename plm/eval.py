@@ -10,7 +10,7 @@ from evaluation import f1_score, get_f1
 from model import REModel
 from prepro import Processor
 from transformers import AutoTokenizer
-from utils import predict
+from utils import predict, set_seed
 
 
 def main(opt):
@@ -20,6 +20,7 @@ def main(opt):
     with open(os.path.join(opt['data_dir'], 'rela2id.json')) as f:
         rela2id = json.load(f)
     no_relation = -1
+    set_seed(0) # 固定随机数
     if 'no_relation' in rela2id:
         no_relation = rela2id['no_relation']
     elif 'Other' in rela2id:
@@ -27,6 +28,7 @@ def main(opt):
 
     tokenizer = AutoTokenizer.from_pretrained(opt['model_name_or_path'])
     tokenizer_save_path = os.path.join(opt['data_dir'], opt['input_format'], 'tokenizer')
+    tokenizer.add_tokens(['<subj>', '<obj>']) # 添加token用于mask
     if os.path.exists(tokenizer_save_path):
         print(f'load tokenizer from {tokenizer_save_path}.')
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_save_path)
@@ -38,6 +40,7 @@ def main(opt):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # 加载模型
     model = torch.load(os.path.join(opt['ckpt_dir'], f'{opt["model_name"]}.ckpt')).to(device)
+    model.encoder.resize_token_embeddings(len(tokenizer)) # 添加了新的token 
     model.eval()
 
     # 保存预测结果
