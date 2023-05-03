@@ -2,13 +2,12 @@ import os
 from argparse import ArgumentParser
 
 import torch
+from data import RETACREDDataset, TACREDDataset
 from eval_metric import tacred_f1, tacred_mi_ma_f1
 from model import UniSTModel
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import AutoTokenizer
-
-from data import RETACREDDataset, TACREDDataset
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -37,6 +36,8 @@ if __name__ == '__main__':
     model = UniSTModel.from_pretrained(ckpt_dir)
     model.to(device)
     tokenizer = AutoTokenizer.from_pretrained(ckpt_dir)
+    tokenizer.add_tokens(['<subj>', '<obj>'])
+    model.roberta.resize_token_embeddings(len(tokenizer))
 
     # 加载数据集
     if dataset == 'tacred':
@@ -45,7 +46,7 @@ if __name__ == '__main__':
         Dataset = RETACREDDataset
     else:
         assert 0, f'no such dataset: {dataset}.'
-    eval_dataset = Dataset(data_path, no_task_desc=no_task_desc, mode='test', mask_entity=mask_entity, mask_token=tokenizer.mask_token) 
+    eval_dataset = Dataset(data_path, no_task_desc=no_task_desc, mode='test', mask_entity=mask_entity) 
 
     # 评价模型
     eval_sampler = SequentialSampler(eval_dataset)
