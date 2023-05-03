@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from arguments import get_args_parser
+from arguments import get_args_parser, get_embedding_layer
 from data_prompt import get_data
 from modeling import get_model, get_tokenizer
 from optimizing import get_optimizer
@@ -25,7 +25,7 @@ def evaluate(model, val_dataset, val_dataloader, save_path=None):
     NA_NUM = val_dataset.NA_NUM
     with torch.no_grad():
         for i, batch in tqdm(enumerate(val_dataloader)):
-            # if i > 100: break # 使用10个batch进行测试
+#            if i > 10: break # 使用10个batch进行测试
             labels = batch[-1].numpy().tolist()
             # 长度为6，6个元素
             batch = [item.cuda() for item in batch]
@@ -76,9 +76,11 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 args = get_args_parser()
-set_seed(args.seed)
+set_seed(args.seed) # 固定随机数种子
 tokenizer = get_tokenizer(special=[args.pseudo_token])
 dadaset = get_data(args)
+model = get_model(tokenizer)
+tokenizer.add_tokens(['<subj>', '<obj>']) # 添加两个特殊token用于mask-entity时测试
 
 train_dataset = dadaset(
     path=args.data_dir,
@@ -172,7 +174,6 @@ if not args.eval_only:
 test_sampler = SequentialSampler(test_dataset)
 test_dataloader = DataLoader(test_dataset, sampler=test_sampler, batch_size=val_batch_size)
 
-model = get_model(tokenizer)
 
 data_name = args.data_name
 model_type = args.model_type
@@ -276,6 +277,10 @@ print("***** {} Test on best model *****".format(checkpoint_prefix))
 model.load_state_dict(torch.load(args.output_dir + "/" + '{}-best_parameter'.format(checkpoint_prefix) + ".pkl"))
 start_test_time = time.time()
 if args.eval_only:
+    if args.mask_entity:
+       model.model.resize_token_embeddings(len(tokenizer)) # 添加了新的token 
+       model.embeddings = get_embedding_layer(args, model.model) # 重新设置embeddings
+       model.vocab_size = len(tokenizer) # 重新设置vocab_size
     # 保存到eval_name里面
     save_path = args.eval_name + '.json' if not args.mask_entity else args.eval_name + '_mask.json'
     mi_f1, ma_f1 = evaluate(model, test_dataset, test_dataloader, save_path=os.path.join(args.output_dir, save_path))

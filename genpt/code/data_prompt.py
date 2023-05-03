@@ -214,6 +214,9 @@ class TACRE_Dataset_bart(REPromptDataset):
         relation = item['relation']
         ss, se = item['subj_start'], item['subj_end']
         os, oe = item['obj_start'], item['obj_end']
+        if self.mask_entity:
+            sentence[ss:se+1] = ['<subj>'] * (se+1-ss)
+            sentence[os:oe+1] = ['<obj>'] * (oe+1-os)
         e1, e2 = sentence[ss: se + 1], sentence[os: oe + 1]
 
         subj_type, obj_type = item['subj_type'].lower().split("_"), item['obj_type'].lower().split("_")
@@ -357,19 +360,14 @@ class TACRE_Dataset_t5(REPromptDataset):
         if self.mask_entity:
             # <extra_id_4>表示subj, <extra_id_5>表示obj
             # subj = '<extra_id_4>'
-            subj = '<extra_id_76>'
-            obj = '<extra_id_58>'
-            # obj = '<extra_id_5>'
-            if ss < os: # subj在obj之前
+            subj = '<subj>'
+            obj = '<obj>'
+            if ss < os:
                 sentence = sentence[:ss] + [subj] + sentence[se+1:os] + [obj] + sentence[oe+1:]
-                ss = se = sentence.index(subj)
-                os = oe = sentence.index(obj)
-            elif os < ss: # obj在subj之前
+            else:
                 sentence = sentence[:os] + [obj] + sentence[oe+1:ss] + [subj] + sentence[se+1:]
-                ss = se = sentence.index(subj)
-                os = oe = sentence.index(obj)
-            # sentence[ss:se+1] = ['<extra_id_4>'] * (se + 1 - ss)
-            # sentence[os:oe+1] = ['<extra_id_5>'] * (oe + 1 - os)
+            ss = se = sentence.index(subj)
+            os = oe = sentence.index(obj)
 
         e1, e2 = sentence[ss: se + 1], sentence[os: oe + 1]
 

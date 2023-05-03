@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--dataset', required=True, type=str, help='数据集名字')
     parser.add_argument('--model_name', required=True, type=str, help='模型名字')
-    parser.add_argument('--model_type', default='t5-base', type=str, help='模型类型')
+    parser.add_argument('--model_type', default='bart-base', type=str, help='模型类型')
     # parser.add_argument('--eval_result_path', required=True, type=str, help="评价结果文件eval_results.json的路径")
     parser.add_argument('--data_dir', default='../../re-datasets', type=str, help='splits数据集路径')
     # parser.add_argument('--rela2id_path', required=True, type=str, help='rela2id.json的路径')
