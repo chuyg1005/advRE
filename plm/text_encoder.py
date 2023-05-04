@@ -12,6 +12,8 @@ class TextEncoder:
         # subj_types / obj_types用来增加新的token
         if input_format == 'entity_name_only':  # 只有实体名称
             return EntityNameOnlyTextEncoder(input_format, tokenizer, max_seq_length)
+        elif input_format == 'entity_type_only':
+            return EntityTypeOnlyTextEncoder(input_format, tokenizer, max_seq_length)
         elif input_format == 'entity_type_mask':
             return EntityMaskTextEncoder(input_format, tokenizer, max_seq_length, subj_types, obj_types)
         elif input_format == 'entity_mask_new': # 只有上下文信息
@@ -393,6 +395,41 @@ class EntityMarkerTextEncoderNew(EntityMarkerTextEncoder):
         # # input_ids[os+1:oe] = [self.tokenizer.mask_token_id] * obj_len
 
         # return input_ids, ss, se, os, oe
+    
+    
+
+class EntityTypeOnlyTextEncoder(EntityMarkerTextEncoderNew):
+    def __init__(self, input_format, tokenizer, max_seq_length):
+        super().__init__(input_format, tokenizer, max_seq_length, True)
+        # new_tokens = ['[SUBJ]', '[OBJ]']
+        # self.new_tokens += new_tokens
+        # self.tokenizer.add_tokens(new_tokens)
+
+    def mask_encode(self, tokens, subj_type, obj_type, ss, se, os, oe, mask_rate=1, all=False):
+        # if mask_rate == 0:
+            # return self.encode(tokens, subj_type, obj_type, ss, se, os, oe)
+        # assert mask_rate == 1
+        # mask_token = self.tokenizer.mask_token
+        # tokens = [mask_token, 'and', mask_token]
+        # ss, se = 0, 0
+        # os, oe = 2, 2
+        return self.encode(tokens, subj_type, obj_type, ss, se ,os, oe)
+
+    def encode(self, tokens, subj_type, obj_type, ss, se, os, oe):
+        # subj = tokens[ss:se+1]
+        # obj = tokens[os:oe+1]
+        subj = self.tokenizer.tokenize(subj_type.replace("_", " ").lower())
+        obj = self.tokenizer.tokenize(obj_type.replace("_", " ").lower())
+        tokens = subj + ['and'] + obj
+        ss, se = 0, len(subj) - 1
+        os, oe = len(subj) + 1, len(tokens) - 1
+        # print('inner method.')
+        # print(tokens)
+
+        return super().encode(tokens, subj_type, obj_type, ss, se, os, oe)
+
+
+    
 
 class EntityNameOnlyTextEncoder(EntityMarkerTextEncoderNew):
     def __init__(self, input_format, tokenizer, max_seq_length):

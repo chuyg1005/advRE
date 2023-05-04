@@ -636,7 +636,7 @@ def main():
                         args.local_rank, device, args.n_gpu, bool(args.local_rank != -1))
 
     # Set seed
-    set_seed(args)
+    set_seed(args.seed)
 
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
@@ -692,17 +692,17 @@ def main():
             else None
         )
         tacred_test_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "tacred" in args.eval_tasks
             else None
         )
         tacred_unseen_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "tacred" in args.eval_tasks
             else None
         )
         tacred_challendge_dataset = (
-            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            TACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "tacred" in args.eval_tasks
             else None
         )
@@ -719,17 +719,17 @@ def main():
             else None
         )
         retacred_test_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', args.eval_name + '.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "retacred" in args.eval_tasks
             else None
         )
         retacred_unseen_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_two_new_entity.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "retacred" in args.eval_tasks
             else None
         )
         retacred_challenge_dataset = (
-            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mask_token=tokenizer.mask_token, mode='test')
+            RETACREDDataset(os.path.join(args.data_dir, os.path.join('splits', 'test_challenge.json')), no_task_desc=args.no_task_desc, mask_entity=args.mask_entity, mode='test')
             if "retacred" in args.eval_tasks
             else None
         )
