@@ -80,7 +80,8 @@ set_seed(args.seed) # 固定随机数种子
 tokenizer = get_tokenizer(special=[args.pseudo_token])
 dadaset = get_data(args)
 model = get_model(tokenizer)
-tokenizer.add_tokens(['<subj>', '<obj>']) # 添加两个特殊token用于mask-entity时测试
+if args.mask_entity:
+    tokenizer.add_tokens(['<subj>', '<obj>']) # 添加两个特殊token用于mask-entity时测试
 
 train_dataset = dadaset(
     path=args.data_dir,

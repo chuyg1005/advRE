@@ -8,6 +8,8 @@ import random
 
 import numpy as np
 import torch
+from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
+                  RETACREDDataset, TACREDDataset, UFETDataset)
 from eval_metric import macro, macro_fewshot, tacred_f1
 from model import UniSTModel
 from sklearn.metrics import (accuracy_score, f1_score, precision_score,
@@ -20,19 +22,17 @@ from tqdm import tqdm, trange
 from transformers import (WEIGHTS_NAME, AdamW, AutoTokenizer, RobertaConfig,
                           get_linear_schedule_with_warmup)
 
-from data import (FewRelDataset, MAVENDataset, MAVENTestDataset,
-                  RETACREDDataset, TACREDDataset, UFETDataset)
-
 logger = logging.getLogger(__name__)
 
 
-def set_seed(args):
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.n_gpu > 0:
-        print(f"let's us {args.n_gpu} gpus.") 
-        torch.cuda.manual_seed_all(args.seed)
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # if args.n_gpu > 0:
+        # print(f"let's us {args.n_gpu} gpus.") 
+        # torch.cuda.manual_seed_all(args.seed)
 
 def train(args, train_dataset, eval_datasets, model, tokenizer):
     """train the model"""     
@@ -88,7 +88,7 @@ def train(args, train_dataset, eval_datasets, model, tokenizer):
     num_steps = 0
     model.zero_grad()
     train_iterator = trange(int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
-    set_seed(args)  # Added here for reproductibility 
+    set_seed(args.seed)  # Added here for reproductibility 
 
     for epoch in train_iterator:
         # 从dataloader中读取一个batch的数据，直接编码

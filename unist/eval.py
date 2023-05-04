@@ -5,6 +5,7 @@ import torch
 from data import RETACREDDataset, TACREDDataset
 from eval_metric import tacred_f1, tacred_mi_ma_f1
 from model import UniSTModel
+from run import set_seed
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import AutoTokenizer
@@ -35,6 +36,7 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = UniSTModel.from_pretrained(ckpt_dir)
     model.to(device)
+    set_seed(0)
     tokenizer = AutoTokenizer.from_pretrained(ckpt_dir)
     tokenizer.add_tokens(['<subj>', '<obj>'])
     model.roberta.resize_token_embeddings(len(tokenizer))
