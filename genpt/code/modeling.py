@@ -108,12 +108,12 @@ class Model(torch.nn.Module):
         self.mean = self.m * self.mean + (1 - self.m) * aug.mean().item() # 进行滑动平均
         self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
         aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
-        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        # aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
         org = torch.zeros_like(aug)
         weights = torch.stack([org, aug], 0) # 拼接起来
         weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
 
-        return torch.dot(weights, loss) / sz, logits
+        return 2 * torch.dot(weights, loss) / sz, logits
 
 
     def compute_scores(self, input_ids, attention_mask, target_ids, target_mask, target_labels, ent_pos):

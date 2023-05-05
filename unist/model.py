@@ -79,7 +79,7 @@ class UniSTModel(RobertaPreTrainedModel):
             weights = torch.stack([org, aug], 0) # 拼接起来
             weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
 
-            return torch.dot(weights, loss) / sz
+            return 2 * torch.dot(weights, loss) / sz
         
         elif train_mode == 'ours':
             # TODO: 实现我们的做法

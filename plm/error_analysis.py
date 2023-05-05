@@ -65,8 +65,8 @@ def main(opt):
             entity_only['obj_end'] = len(subj) + len(obj)
 
             feature = prepro.get_feature(d, mask_rate=0., all=False)
-            feature_e = prepro.get_feature(entity_only, mask_rate=0., all=False)
-            feature_c = prepro.get_feature(context_only, mask_rate=1., all=False)
+            feature_e = prepro.get_feature(entity_only, mask_rate=0., all=False) # 只使用实体名称
+            feature_c = prepro.get_feature(context_only, mask_rate=1., all=False) # 只使用上下文
             # features += [feature1, feature2] # 每个原始样本对应两个特征
             features += [feature, feature_e, feature_c]
 
@@ -123,7 +123,7 @@ def main(opt):
         print(f'total: {total}, ent_hits: {ent_hits}, cont_hits: {cont_hits}.')
         results.append([id2rela[rela_id], total, ent_hits, cont_hits])
 
-    with open('results1.json', 'w') as f:
+    with open('error_analysis.json', 'w') as f:
         json.dump(results, f)
 
 if __name__ == '__main__':
