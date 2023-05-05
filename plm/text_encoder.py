@@ -594,27 +594,29 @@ class TypedEntityMarkerPunctNewTextEncoder(TypedEntityMarkerPunctTextEncoder):
         subj_len = se - ss + 1
         obj_len = oe - os + 1
 
-        if not all:
-            subj_masks = np.random.choice(subj_len, int(subj_len * mask_rate), replace=False)
-            obj_masks = np.random.choice(obj_len, int(obj_len * mask_rate), replace=False)
+        # 让结果可以复现，否则调用了random之后结果就不可复现了
+        if mask_rate > 0.:
+            if not all:
+                subj_masks = np.random.choice(subj_len, int(subj_len * mask_rate), replace=False)
+                obj_masks = np.random.choice(obj_len, int(obj_len * mask_rate), replace=False)
 
-            for idx in subj_masks:
-                # tokens[ss+idx] = mask_token
-                tokens[ss+idx] = '<subj>'
+                for idx in subj_masks:
+                    # tokens[ss+idx] = mask_token
+                    tokens[ss+idx] = '<subj>'
 
-            for idx in obj_masks:
- #               tokens[os+idx] = mask_token
-                tokens[os+idx] = '<obj>'
+                for idx in obj_masks:
+    #               tokens[os+idx] = mask_token
+                    tokens[os+idx] = '<obj>'
 
-        else:
-            n = subj_len + obj_len
-            mask_num = int(n * mask_rate)
-            masks = np.random.choice(len(tokens), mask_num, replace=False)
+            else:
+                n = subj_len + obj_len
+                mask_num = int(n * mask_rate)
+                masks = np.random.choice(len(tokens), mask_num, replace=False)
 
-            for idx in masks:
-                tokens[idx] = mask_token
-        # tokens[ss:se+1] = [mask_token] * subj_len
-        # tokens[os:oe+1] = [mask_token] * obj_len
+                for idx in masks:
+                    tokens[idx] = mask_token
+            # tokens[ss:se+1] = [mask_token] * subj_len
+            # tokens[os:oe+1] = [mask_token] * obj_len
 
         return self.encode(tokens, subj_type, obj_type, ss, se, os, oe)
 
