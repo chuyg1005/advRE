@@ -178,7 +178,7 @@ class REModel(nn.Module):
         self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
         aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
         # 不使用3-sigma规则进行筛选
-        # aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
         org = torch.zeros_like(aug)
         weights = torch.stack([org, aug], 0) # 拼接起来
         weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.

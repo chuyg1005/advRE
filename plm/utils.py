@@ -86,8 +86,9 @@ def collate_fn(batch, mode='train'):
     if mode == 'train':
         # 使用伪数据
         batch1 = [f[0] for f in batch]
-        indices = np.random.randint(1, len(batch[0]), len(batch))
-        batch2 = [batch[i][indices[i]] for i in range(len(batch))]
+        # indices = np.random.randint(1, len(batch[0]), len(batch))
+        # batch2 = [batch[i][indices[i]] for i in range(len(batch))]
+        batch2 = [random.choice(batch[i][1:]) for i in range(len(batch))]
         batch = batch1 + batch2
     # if len(batch[0]) != 2:
     #     pass
@@ -127,7 +128,9 @@ def predict(model, features, test_batch_size, device):
     dataloader = DataLoader(features, batch_size=test_batch_size, collate_fn=lambda batch: collate_fn(batch, 'eval'), drop_last=False, shuffle=False) # 评价模型
     keys, preds = [], []
     model.eval()
-    for i_b, batch in enumerate(tqdm(dataloader)):
+    if len(dataloader) > 10: # 超过10显示进度条
+        dataloader = tqdm(dataloader)
+    for i_b, batch in enumerate(dataloader):
 
         inputs = {'input_ids': batch[0].to(device),
                   'attention_mask': batch[1].to(device),

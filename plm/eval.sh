@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0
+# export CUDA_VISIBLE_DEVICES=0
 # input_format=$1
 # dataset=$2
 # eval_name=$3
@@ -11,7 +11,7 @@ dataset=$1
 model_name=$2
 split=$3
 ckpt=$4
-mask_rate=${5-0.}
+mask_rate=${5-0}
 python eval.py --ckpt_dir saved_models/${dataset}/${model_name} --eval_data_dir ../../re-datasets/${dataset} --dataset ${split} --model_name $ckpt --save --mask_rate $mask_rate # 加载模型预测并且保存结果
 
 # for dataset in 'semeval' 'wiki80' 'tacred' 'retacred'; do

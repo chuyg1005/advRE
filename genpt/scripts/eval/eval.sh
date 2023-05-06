@@ -26,8 +26,8 @@ python code/run_prompt.py \
     --learning_rate_for_new_token 1e-5 \
     --rel2id_dir ./data/${dataset}/rela2id.json \
     --eval_only \
-    --eval_name ${split} \
-    --mask_entity
+    --eval_name ${split}
+#    --mask_entity
 
 # mask住entity name
 # python code/run_prompt.py \
