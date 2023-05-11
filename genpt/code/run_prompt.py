@@ -220,6 +220,9 @@ if not args.eval_only:
             }
             loss, _ = model(**inputs) # logits并没有使用到，
             # print(f"loss: {loss.item()}.")
+            if torch.isnan(loss): # 跳过nan的loss，防止模型崩掉
+                print('miss nan loss.')
+                continue
 
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps

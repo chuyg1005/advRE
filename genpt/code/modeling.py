@@ -96,6 +96,10 @@ class Model(torch.nn.Module):
             loss = loss.sum(dim=1)
             target_lens = target_mask.sum(dim=1)
             loss = loss / target_lens # 重新归一化
+            # if torch.any(loss.isnan()):
+            #     print(target_lens)
+            #     print(loss)
+            #     assert 0, 'loss exists nan'
         return loss, logits
     
     # @torch.no_grad()
@@ -109,6 +113,8 @@ class Model(torch.nn.Module):
         self.var = self.m * self.var + (1 - self.m) * aug.var().item() # 方差的滑动平均
         aug = (aug - self.mean) / np.sqrt(self.var + self.eps) # 标准化为标准正态分布
         # aug = torch.where(aug > 3, aug, torch.full_like(aug, -1e12)) # 保留损失增加量大于mean + 3sigma的
+        # 排除nan
+        aug = torch.where(torch.isnan(aug), torch.full_like(aug, -1e12), aug)
         org = torch.zeros_like(aug)
         weights = torch.stack([org, aug], 0) # 拼接起来
         weights = F.softmax(weights, 0).flatten() # 进行softmax转换为logits.
